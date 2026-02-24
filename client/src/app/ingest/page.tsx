@@ -32,7 +32,10 @@ export default function IngestPage() {
 
   const [step, setStep] = useState<'input' | 'ingesting' | 'ingested' | 'executing' | 'done'>('input')
   const [projectId, setProjectId] = useState('')
-  const [ingestResult, setIngestResult] = useState<{ tasks_created: number; phases: number } | null>(null)
+  const [ingestResult, setIngestResult] = useState<{
+    tasks_created: number; phases: number
+    agents_selected: string[]; agents_skipped: string[]; selection_reasoning: string
+  } | null>(null)
   const [execLog, setExecLog] = useState<string[]>([])
   const [currentPhase, setCurrentPhase] = useState(0)
   const [error, setError] = useState('')
@@ -66,7 +69,13 @@ export default function IngestPage() {
 
       const res = await api.post('/pm-agent/ingest', body)
       setProjectId(res.data.data.project_id)
-      setIngestResult({ tasks_created: res.data.data.tasks_created, phases: res.data.data.phases })
+      setIngestResult({
+        tasks_created: res.data.data.tasks_created,
+        phases: res.data.data.phases,
+        agents_selected: res.data.data.agents_selected || [],
+        agents_skipped: res.data.data.agents_skipped || [],
+        selection_reasoning: res.data.data.selection_reasoning || '',
+      })
       setStep('ingested')
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Ingest failed'
@@ -258,14 +267,40 @@ export default function IngestPage() {
                     <p className="text-orion-muted text-xs mt-1">Phases</p>
                   </div>
                   <div className="bg-orion-darker rounded-xl p-4 text-center">
-                    <p className="text-orion-text font-bold text-2xl">16</p>
-                    <p className="text-orion-muted text-xs mt-1">Agents</p>
+                    <p className="text-orion-text font-bold text-2xl">{ingestResult.agents_selected.length}</p>
+                    <p className="text-orion-muted text-xs mt-1">Agents Selected</p>
                   </div>
                 </div>
 
-                <p className="text-orion-muted text-sm bg-orion-darker rounded-lg p-3">
-                  All tasks are in the Kanban board waiting to be executed. Press the button below to start all agents sequentially. You can watch progress live in the Kanban.
-                </p>
+                {/* PM agent selection summary */}
+                <div className="bg-orion-darker rounded-xl p-4 space-y-3">
+                  <p className="text-orion-accent text-xs font-semibold uppercase tracking-wide">PM Agent Selection</p>
+                  {ingestResult.selection_reasoning && (
+                    <p className="text-orion-muted text-xs italic">{ingestResult.selection_reasoning}</p>
+                  )}
+                  <div>
+                    <p className="text-orion-text text-xs font-medium mb-1.5">Active agents ({ingestResult.agents_selected.length})</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {ingestResult.agents_selected.map(a => (
+                        <span key={a} className="px-2 py-0.5 bg-green-500/10 border border-green-500/30 text-green-400 text-xs rounded-full">
+                          {a.replace(/_/g, ' ')}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  {ingestResult.agents_skipped.length > 0 && (
+                    <div>
+                      <p className="text-orion-muted text-xs font-medium mb-1.5">Skipped ({ingestResult.agents_skipped.length})</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {ingestResult.agents_skipped.map(a => (
+                          <span key={a} className="px-2 py-0.5 bg-orion-border/30 text-orion-muted/50 text-xs rounded-full line-through">
+                            {a.replace(/_/g, ' ')}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 <div className="flex gap-3">
                   <Button variant="secondary" onClick={() => router.push(`/kanban?project=${projectId}`)}>

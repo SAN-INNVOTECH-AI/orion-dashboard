@@ -72,25 +72,27 @@ module.exports = function ingestRoute(db) {
         .map(t => `- ${t.replace(/_/g, ' ')} (type: ${t})`)
         .join('\n')
 
-      // Ask Claude to generate a task breakdown
+      // Ask Claude (as PM) to first select relevant agents, then create tasks only for those
       const message = await client.messages.create({
         model: 'claude-opus-4-5',
         max_tokens: 4096,
         messages: [{
           role: 'user',
-          content: `You are a senior Project Manager analyzing a project document. Break it down into specific, actionable tasks for each agent listed below.
+          content: `You are a senior Project Manager analyzing a project document. Your first job is to decide WHICH agents from the roster are actually needed for this project — not all projects need every agent. Then create specific tasks only for the selected agents.
 
 PROJECT NAME: ${name}
 
 DOCUMENT:
 ${docText.slice(0, 8000)}
 
-AGENT ROSTER:
+FULL AGENT ROSTER (pick only what's relevant):
 ${agentRoster}
 
 Return ONLY valid JSON in this exact format (no markdown, no explanation):
 {
   "project_description": "2-3 sentence summary of the project",
+  "selected_agents": ["business_analyst", "uiux_designer"],
+  "selection_reasoning": "Brief note on why these agents were chosen and others were skipped",
   "tasks": [
     {
       "agent_type": "business_analyst",
@@ -102,11 +104,11 @@ Return ONLY valid JSON in this exact format (no markdown, no explanation):
 }
 
 Rules:
-- Create 2-4 tasks per agent type that are actually relevant to this specific project
-- Tasks must be specific to the document content, not generic
+- selected_agents must only include agent types that are genuinely needed for this project
+- Create 2-4 tasks per selected agent type, specific to the document content
 - Priority must be one of: low, medium, high, urgent
-- Every agent type in the roster must have at least one task
-- agent_type must exactly match the type strings in the roster`,
+- agent_type in tasks must exactly match the type strings in the roster and be in selected_agents
+- DO NOT include agents that have no meaningful role in this project`,
         }],
       })
 
@@ -161,14 +163,24 @@ Rules:
         }
       }
 
+      const selectedAgents = parsed.selected_agents || ALL_AGENT_TYPES
+      const usedPhases = [...new Set(
+        taskIds.length > 0
+          ? db.prepare(`SELECT DISTINCT phase FROM tasks WHERE project_id = ?`).all(projectId).map(r => r.phase)
+          : []
+      )]
+
       res.json({
         success: true,
         data: {
           project_id: projectId,
           project_name: name,
           tasks_created: taskIds.length,
-          phases: AGENT_PHASES.length,
-          message: `Project created with ${taskIds.length} tasks across ${AGENT_PHASES.length} phases. Ready to execute.`,
+          phases: usedPhases.length,
+          agents_selected: selectedAgents,
+          agents_skipped: ALL_AGENT_TYPES.filter(a => !selectedAgents.includes(a)),
+          selection_reasoning: parsed.selection_reasoning || '',
+          message: `Project created with ${taskIds.length} tasks for ${selectedAgents.length} agents. Ready to execute.`,
         },
       })
 

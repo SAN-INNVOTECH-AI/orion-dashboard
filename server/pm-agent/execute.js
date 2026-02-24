@@ -103,6 +103,10 @@ module.exports = function executeRoute(db, sseClients) {
       },
     })
 
+    // ── Resume support: reset any stuck in_progress tasks back to todo ──
+    db.prepare(`UPDATE tasks SET status = 'todo', updated_at = ? WHERE project_id = ? AND status = 'in_progress'`)
+      .run(now(), project_id)
+
     // ── Run phases sequentially ──
     ;(async () => {
       try {
@@ -112,9 +116,21 @@ module.exports = function executeRoute(db, sseClients) {
           const phaseTasks = phaseMap[phase]
           const phaseName = phaseTasks[0]?.phase_name || `Phase ${phase}`
 
-          broadcast({ type: 'phase_start', phase, phase_name: phaseName, task_count: phaseTasks.length })
+          // Re-fetch task statuses fresh (in case this is a resume)
+          const freshStatuses = {}
+          db.prepare(`SELECT id, status FROM tasks WHERE project_id = ?`).all(project_id)
+            .forEach(t => { freshStatuses[t.id] = t.status })
 
-          for (const task of phaseTasks) {
+          const pendingTasks = phaseTasks.filter(t => freshStatuses[t.id] !== 'done')
+
+          if (pendingTasks.length === 0) {
+            broadcast({ type: 'phase_skip', phase, phase_name: phaseName, reason: 'already complete' })
+            continue
+          }
+
+          broadcast({ type: 'phase_start', phase, phase_name: phaseName, task_count: pendingTasks.length })
+
+          for (const task of pendingTasks) {
             const persona = AGENT_PERSONAS[task.agent_type] || 'You are an AI agent.'
 
             // Mark in_progress
@@ -122,13 +138,16 @@ module.exports = function executeRoute(db, sseClients) {
             broadcast({ type: 'task_start', taskId: task.id, agent: task.agent_name, title: task.title })
 
             let agentOutput = ''
-            try {
-              const msg = await client.messages.create({
-                model: 'claude-haiku-4-5',
-                max_tokens: 1024,
-                messages: [{
-                  role: 'user',
-                  content: `${persona}
+            // Retry with backoff on rate limit
+            const MAX_RETRIES = 4
+            for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+              try {
+                const msg = await client.messages.create({
+                  model: 'claude-haiku-4-5',
+                  max_tokens: 1024,
+                  messages: [{
+                    role: 'user',
+                    content: `${persona}
 
 PROJECT: ${project.name}
 PROJECT CONTEXT: ${project.description || 'No additional context'}
@@ -137,11 +156,22 @@ YOUR TASK: ${task.title}
 TASK DETAILS: ${task.description || 'Complete this task based on the project context.'}
 
 Execute this task. Be specific, practical, and reference the actual project. Provide a detailed work output in 200-400 words. Format with clear sections.`,
-                }],
-              })
-              agentOutput = msg.content[0].text
-            } catch (err) {
-              agentOutput = `Error during execution: ${err.message}`
+                  }],
+                })
+                agentOutput = msg.content[0].text
+                break  // success
+              } catch (err) {
+                const isRateLimit = err?.status === 429 || err?.message?.includes('rate limit') || err?.message?.includes('overloaded')
+                if (isRateLimit && attempt < MAX_RETRIES) {
+                  const waitMs = Math.pow(2, attempt) * 5000  // 10s, 20s, 40s
+                  broadcast({ type: 'rate_limit', taskId: task.id, retry: attempt, wait_ms: waitMs })
+                  updateTask(task.id, 'in_progress', `Rate limited. Retrying in ${waitMs / 1000}s (attempt ${attempt}/${MAX_RETRIES})...`, task.assigned_agent)
+                  await new Promise(r => setTimeout(r, waitMs))
+                } else {
+                  agentOutput = `Error: ${err.message}`
+                  break
+                }
+              }
             }
 
             // Mark done with output
@@ -154,18 +184,20 @@ Execute this task. Be specific, practical, and reference the actual project. Pro
 
             broadcast({ type: 'task_done', taskId: task.id, agent: task.agent_name, title: task.title, output_preview: agentOutput.slice(0, 150) })
 
-            // Brief pause between tasks
-            await new Promise(r => setTimeout(r, 500))
+            // Brief pause between tasks to avoid hammering API
+            await new Promise(r => setTimeout(r, 800))
           }
 
           broadcast({ type: 'phase_done', phase, phase_name: phaseName })
         }
 
-        // Mark project complete
-        db.prepare('UPDATE projects SET status = ?, updated_at = ? WHERE id = ?')
-          .run('completed', now(), project_id)
+        // Mark project complete only if all phases were included
+        if (maxPhase >= 7) {
+          db.prepare('UPDATE projects SET status = ?, updated_at = ? WHERE id = ?')
+            .run('completed', now(), project_id)
+        }
 
-        broadcast({ type: 'execution_done', project_id, project_name: project.name })
+        broadcast({ type: 'execution_done', project_id, project_name: project.name, awaiting_approval: maxPhase < 7 })
 
       } catch (err) {
         console.error('[execute]', err)
