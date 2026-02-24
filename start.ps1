@@ -5,6 +5,7 @@
 $root = $PSScriptRoot
 
 Write-Host "Starting Orion Server (port 3001)..." -ForegroundColor Cyan
+$env:PORT = "3001"
 $server = Start-Process node -ArgumentList "index.js" `
   -WorkingDirectory "$root\server" `
   -NoNewWindow -PassThru `
