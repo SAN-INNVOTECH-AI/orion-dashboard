@@ -45,6 +45,7 @@ export default function KanbanPage() {
   const [defaultStatus, setDefaultStatus] = useState('todo')
   const [form, setForm] = useState({ title: '', description: '', priority: 'medium', assigned_agent: '', status: 'todo' })
   const [saving, setSaving] = useState(false)
+  const [titleError, setTitleError] = useState('')
 
   useEffect(() => {
     api.get('/projects').then((r) => {
@@ -78,6 +79,7 @@ export default function KanbanPage() {
 
   const openCreate = (status: string) => {
     setEditTask(null)
+    setTitleError('')
     setDefaultStatus(status)
     setForm({ title: '', description: '', priority: 'medium', assigned_agent: '', status })
     setShowModal(true)
@@ -85,12 +87,13 @@ export default function KanbanPage() {
 
   const openEdit = (task: Task) => {
     setEditTask(task)
+    setTitleError('')
     setForm({ title: task.title, description: task.description, priority: task.priority, assigned_agent: task.assigned_agent || '', status: task.status })
     setShowModal(true)
   }
 
   const handleSave = async () => {
-    if (!form.title.trim()) return
+    if (!form.title.trim()) { setTitleError('Title is required'); return }
     setSaving(true)
     try {
       if (editTask) {
@@ -207,7 +210,15 @@ export default function KanbanPage() {
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editTask ? 'Edit Task' : 'New Task'}>
         <div className="space-y-4">
-          <Input label="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
+          <div>
+            <Input
+              label="Title *"
+              value={form.title}
+              onChange={(e) => { setForm({ ...form, title: e.target.value }); if (titleError) setTitleError('') }}
+              placeholder="Enter task title"
+            />
+            {titleError && <p className="text-orion-danger text-xs mt-1">{titleError}</p>}
+          </div>
           <div className="flex flex-col gap-1">
             <label className="text-orion-muted text-sm font-medium">Description</label>
             <textarea

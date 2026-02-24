@@ -70,7 +70,8 @@ export default function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-orion-border">
-        <p className="text-orion-muted text-xs">v2.0.0 — Agent Fleet Active</p>
+        <p className="text-orion-muted text-xs">© 2024 SAN INNVOTECH</p>
+        <p className="text-orion-muted text-xs opacity-60">Designed by SAN INNVOTECH</p>
       </div>
     </div>
   )
