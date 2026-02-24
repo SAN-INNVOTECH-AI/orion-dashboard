@@ -11,7 +11,8 @@ import AgentStatusDot from '@/components/ui/AgentStatusDot'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import api from '@/lib/api'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
-import { Plus } from 'lucide-react'
+import { Plus, FolderOpen } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 interface Task {
   id: string; title: string; description: string; status: string; priority: string
@@ -32,7 +33,9 @@ const priorityOptions = [
 ]
 
 export default function KanbanPage() {
+  const router = useRouter()
   const [projects, setProjects] = useState<Project[]>([])
+  const [projectsLoaded, setProjectsLoaded] = useState(false)
   const [selectedProject, setSelectedProject] = useState('')
   const [tasks, setTasks] = useState<Task[]>([])
   const [agents, setAgents] = useState<Agent[]>([])
@@ -48,7 +51,7 @@ export default function KanbanPage() {
       const ps = r.data.data || r.data
       setProjects(ps)
       if (ps.length) setSelectedProject(ps[0].id)
-    })
+    }).finally(() => setProjectsLoaded(true))
     api.get('/agents').then((r) => setAgents(r.data.data || r.data))
   }, [])
 
@@ -110,6 +113,28 @@ export default function KanbanPage() {
 
   return (
     <AppLayout title="Kanban Board">
+      {/* No projects empty state */}
+      {projectsLoaded && projects.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <div className="w-16 h-16 rounded-full bg-orion-accent/10 flex items-center justify-center mb-4">
+            <FolderOpen className="w-8 h-8 text-orion-accent" />
+          </div>
+          <h2 className="text-orion-text font-semibold text-xl mb-2">No projects yet</h2>
+          <p className="text-orion-muted text-sm mb-6 max-w-xs">
+            Create your first project to start organizing tasks on the Kanban board.
+          </p>
+          <button
+            onClick={() => router.push('/projects')}
+            className="flex items-center gap-2 bg-orion-accent hover:bg-orion-accent-hover text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Create First Project
+          </button>
+        </div>
+      )}
+
+      {/* Project selector — only when projects exist */}
+      {projects.length > 0 && (
       <div className="flex items-center gap-4 mb-6">
         <select
           value={selectedProject}
@@ -176,6 +201,7 @@ export default function KanbanPage() {
           })}
         </div>
       </DragDropContext>
+      )}
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editTask ? 'Edit Task' : 'New Task'}>
         <div className="space-y-4">
