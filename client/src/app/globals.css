@@ -2,24 +2,56 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Theme: Dark (default) ─────────────────── */
+:root {
+  --orion-dark: #0f1117;
+  --orion-darker: #080b10;
+  --orion-card: #1a1f2e;
+  --orion-border: #2a3040;
+  --orion-text: #e2e8f0;
+  --orion-muted: #94a3b8;
+  --orion-accent: #6366f1;
+  --orion-accent-hover: #4f46e5;
+  --orion-success: #10b981;
+  --orion-warning: #f59e0b;
+  --orion-danger: #ef4444;
+  --orion-tooltip-bg: #1a1f2e;
+  --orion-tooltip-border: #2a3040;
+}
+
+/* ── Theme: Light ──────────────────────────── */
+.light {
+  --orion-dark: #f1f5f9;
+  --orion-darker: #f8fafc;
+  --orion-card: #ffffff;
+  --orion-border: #e2e8f0;
+  --orion-text: #1e293b;
+  --orion-muted: #64748b;
+  --orion-accent: #6366f1;
+  --orion-accent-hover: #4f46e5;
+  --orion-tooltip-bg: #ffffff;
+  --orion-tooltip-border: #e2e8f0;
+}
+
 body {
-  background-color: #080b10;
-  color: #e2e8f0;
+  background-color: var(--orion-darker);
+  color: var(--orion-text);
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
-::-webkit-scrollbar {
-  width: 6px;
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--orion-dark); }
+::-webkit-scrollbar-thumb { background: var(--orion-border); border-radius: 3px; }
+
+/* ── Page transition animations ───────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-::-webkit-scrollbar-track {
-  background: #0f1117;
-}
-::-webkit-scrollbar-thumb {
-  background: #2a3040;
-  border-radius: 3px;
+.page-enter {
+  animation: fadeInUp 0.35s ease both;
 }
