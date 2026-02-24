@@ -16,7 +16,8 @@ import { useRouter } from 'next/navigation'
 
 interface Task {
   id: string; title: string; description: string; status: string; priority: string
-  assigned_agent?: string; assigned_agent_name?: string; assigned_agent_status?: string; project_id: string
+  assigned_agent?: string; assigned_agent_name?: string; assigned_agent_status?: string
+  project_id: string; notes?: string; phase?: number
 }
 interface Project { id: string; name: string }
 interface Agent { id: string; name: string; status: string }
@@ -236,6 +237,14 @@ export default function KanbanPage() {
             options={agentOptions}
             placeholder="— No Agent —"
           />
+          {/* Agent output notes — shown when task was executed by an agent */}
+          {editTask?.notes && editTask.notes !== 'Agent is working on this task...' && (
+            <div className="bg-orion-darker border border-orion-border rounded-xl p-4">
+              <p className="text-orion-accent text-xs font-semibold uppercase tracking-wide mb-2">Agent Output</p>
+              <p className="text-orion-text text-sm whitespace-pre-wrap leading-relaxed">{editTask.notes}</p>
+            </div>
+          )}
+
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
             <Button variant="primary" loading={saving} onClick={handleSave}>{editTask ? 'Save' : 'Create'}</Button>

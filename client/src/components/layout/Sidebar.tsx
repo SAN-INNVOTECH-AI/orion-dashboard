@@ -1,20 +1,21 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, FolderOpen, Columns, CheckSquare, Bot, BarChart2, Users } from 'lucide-react'
+import { LayoutDashboard, FolderOpen, Columns, CheckSquare, Bot, BarChart2, Users, Sparkles } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { useDashboardStore } from '@/store/dashboardStore'
 import { clsx } from 'clsx'
 import { motion } from 'framer-motion'
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/projects', label: 'Projects', icon: FolderOpen },
-  { href: '/kanban', label: 'Kanban', icon: Columns },
-  { href: '/tasks', label: 'Tasks', icon: CheckSquare, adminOnly: true },
-  { href: '/agents', label: 'Agents', icon: Bot, showAgentBadge: true },
-  { href: '/analytics', label: 'Analytics', icon: BarChart2 },
-  { href: '/users', label: 'Users', icon: Users, adminOnly: true },
+  { href: '/dashboard', label: 'Dashboard',   icon: LayoutDashboard },
+  { href: '/ingest',    label: 'New Project',  icon: Sparkles },
+  { href: '/projects',  label: 'Projects',     icon: FolderOpen },
+  { href: '/kanban',    label: 'Kanban',       icon: Columns },
+  { href: '/tasks',     label: 'Tasks',        icon: CheckSquare, adminOnly: true },
+  { href: '/agents',    label: 'Agents',       icon: Bot, showAgentBadge: true },
+  { href: '/analytics', label: 'Analytics',    icon: BarChart2 },
+  { href: '/users',     label: 'Users',        icon: Users, adminOnly: true },
 ]
 
 export default function Sidebar() {
