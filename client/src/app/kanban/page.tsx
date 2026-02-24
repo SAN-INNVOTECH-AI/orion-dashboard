@@ -1,0 +1,208 @@
+'use client'
+import { useEffect, useState } from 'react'
+import AppLayout from '@/components/layout/AppLayout'
+import Card from '@/components/ui/Card'
+import Badge from '@/components/ui/Badge'
+import Button from '@/components/ui/Button'
+import Modal from '@/components/ui/Modal'
+import Input from '@/components/ui/Input'
+import Select from '@/components/ui/Select'
+import AgentStatusDot from '@/components/ui/AgentStatusDot'
+import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import api from '@/lib/api'
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
+import { Plus } from 'lucide-react'
+
+interface Task {
+  id: string; title: string; description: string; status: string; priority: string
+  assigned_agent?: string; assigned_agent_name?: string; assigned_agent_status?: string; project_id: string
+}
+interface Project { id: string; name: string }
+interface Agent { id: string; name: string; status: string }
+
+const columns = [
+  { id: 'todo', label: 'To Do' },
+  { id: 'in_progress', label: 'In Progress' },
+  { id: 'review', label: 'Review' },
+  { id: 'done', label: 'Done' },
+]
+const priorityOptions = [
+  { value: 'low', label: 'Low' }, { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' }, { value: 'urgent', label: 'Urgent' },
+]
+
+export default function KanbanPage() {
+  const [projects, setProjects] = useState<Project[]>([])
+  const [selectedProject, setSelectedProject] = useState('')
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [agents, setAgents] = useState<Agent[]>([])
+  const [loading, setLoading] = useState(false)
+  const [showModal, setShowModal] = useState(false)
+  const [editTask, setEditTask] = useState<Task | null>(null)
+  const [defaultStatus, setDefaultStatus] = useState('todo')
+  const [form, setForm] = useState({ title: '', description: '', priority: 'medium', assigned_agent: '', status: 'todo' })
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    api.get('/projects').then((r) => {
+      const ps = r.data.data || r.data
+      setProjects(ps)
+      if (ps.length) setSelectedProject(ps[0].id)
+    })
+    api.get('/agents').then((r) => setAgents(r.data.data || r.data))
+  }, [])
+
+  useEffect(() => {
+    if (!selectedProject) return
+    setLoading(true)
+    api.get(`/tasks?project_id=${selectedProject}`)
+      .then((r) => setTasks(r.data.data || r.data))
+      .finally(() => setLoading(false))
+  }, [selectedProject])
+
+  const onDragEnd = async (result: DropResult) => {
+    if (!result.destination) return
+    const { draggableId, destination } = result
+    if (result.source.droppableId === destination.droppableId) return
+    const newStatus = destination.droppableId
+    setTasks((prev) => prev.map((t) => t.id === draggableId ? { ...t, status: newStatus } : t))
+    try {
+      await api.put(`/tasks/${draggableId}/move`, { status: newStatus })
+    } catch {
+      setTasks((prev) => prev.map((t) => t.id === draggableId ? { ...t, status: result.source.droppableId } : t))
+    }
+  }
+
+  const openCreate = (status: string) => {
+    setEditTask(null)
+    setDefaultStatus(status)
+    setForm({ title: '', description: '', priority: 'medium', assigned_agent: '', status })
+    setShowModal(true)
+  }
+
+  const openEdit = (task: Task) => {
+    setEditTask(task)
+    setForm({ title: task.title, description: task.description, priority: task.priority, assigned_agent: task.assigned_agent || '', status: task.status })
+    setShowModal(true)
+  }
+
+  const handleSave = async () => {
+    if (!form.title.trim()) return
+    setSaving(true)
+    try {
+      if (editTask) {
+        await api.put(`/tasks/${editTask.id}`, { ...form, project_id: selectedProject })
+        if (form.assigned_agent) await api.put(`/tasks/${editTask.id}/assign-agent`, { agent_id: form.assigned_agent })
+      } else {
+        const r = await api.post('/tasks', { ...form, project_id: selectedProject })
+        const newTaskId = r.data.data?.id || r.data.id
+        if (form.assigned_agent && newTaskId) await api.put(`/tasks/${newTaskId}/assign-agent`, { agent_id: form.assigned_agent })
+      }
+      setShowModal(false)
+      if (selectedProject) {
+        const r = await api.get(`/tasks?project_id=${selectedProject}`)
+        setTasks(r.data.data || r.data)
+      }
+    } finally { setSaving(false) }
+  }
+
+  const agentOptions = agents.map((a) => ({ value: a.id, label: a.name }))
+
+  return (
+    <AppLayout title="Kanban Board">
+      <div className="flex items-center gap-4 mb-6">
+        <select
+          value={selectedProject}
+          onChange={(e) => setSelectedProject(e.target.value)}
+          className="bg-orion-card border border-orion-border rounded-lg px-3 py-2 text-orion-text focus:outline-none focus:border-orion-accent"
+        >
+          {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
+        {loading && <LoadingSpinner size="sm" />}
+      </div>
+
+      <DragDropContext onDragEnd={onDragEnd}>
+        <div className="flex gap-4 overflow-x-auto pb-4">
+          {columns.map((col) => {
+            const colTasks = tasks.filter((t) => t.status === col.id)
+            return (
+              <div key={col.id} className="flex-shrink-0 w-72">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-orion-text font-semibold text-sm">{col.label}</h3>
+                    <span className="bg-orion-border text-orion-muted text-xs rounded-full px-2">{colTasks.length}</span>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={() => openCreate(col.id)}>
+                    <Plus className="w-3 h-3" />
+                  </Button>
+                </div>
+                <Droppable droppableId={col.id}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={`min-h-48 rounded-xl p-2 transition-colors ${snapshot.isDraggingOver ? 'bg-orion-accent/5' : 'bg-orion-darker'}`}
+                    >
+                      {colTasks.map((task, index) => (
+                        <Draggable key={task.id} draggableId={task.id} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              onClick={() => openEdit(task)}
+                              className={`bg-orion-card border border-orion-border rounded-lg p-3 mb-2 cursor-pointer hover:border-orion-accent/50 transition-all ${snapshot.isDragging ? 'shadow-lg shadow-orion-accent/20 rotate-1' : ''}`}
+                            >
+                              <p className="text-orion-text text-sm font-medium mb-2">{task.title}</p>
+                              <div className="flex items-center justify-between">
+                                <Badge type="priority" value={task.priority} />
+                                {task.assigned_agent_name && (
+                                  <div className="flex items-center gap-1">
+                                    <AgentStatusDot status={task.assigned_agent_status || 'idle'} />
+                                    <span className="text-orion-muted text-xs truncate max-w-20">{task.assigned_agent_name.replace(' Agent', '')}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </div>
+            )
+          })}
+        </div>
+      </DragDropContext>
+
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editTask ? 'Edit Task' : 'New Task'}>
+        <div className="space-y-4">
+          <Input label="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
+          <div className="flex flex-col gap-1">
+            <label className="text-orion-muted text-sm font-medium">Description</label>
+            <textarea
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              rows={2}
+              className="bg-orion-card border border-orion-border rounded-lg px-3 py-2 text-orion-text w-full focus:outline-none focus:border-orion-accent resize-none"
+            />
+          </div>
+          <Select label="Priority" value={form.priority} onChange={(v) => setForm({ ...form, priority: v })} options={priorityOptions} />
+          <Select
+            label="Assign to Agent (optional)"
+            value={form.assigned_agent}
+            onChange={(v) => setForm({ ...form, assigned_agent: v })}
+            options={agentOptions}
+            placeholder="— No Agent —"
+          />
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
+            <Button variant="primary" loading={saving} onClick={handleSave}>{editTask ? 'Save' : 'Create'}</Button>
+          </div>
+        </div>
+      </Modal>
+    </AppLayout>
+  )
+}
