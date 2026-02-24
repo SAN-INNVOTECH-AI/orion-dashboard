@@ -5,6 +5,7 @@ import { LayoutDashboard, FolderOpen, Columns, CheckSquare, Bot, BarChart2, User
 import { useAuthStore } from '@/store/authStore'
 import { useDashboardStore } from '@/store/dashboardStore'
 import { clsx } from 'clsx'
+import { motion } from 'framer-motion'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -43,28 +44,38 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 p-4 space-y-1">
-        {navItems.map(({ href, label, icon: Icon, adminOnly, showAgentBadge }) => {
+        {navItems.map(({ href, label, icon: Icon, adminOnly, showAgentBadge }, i) => {
           if (adminOnly && user?.role !== 'admin') return null
           const isActive = pathname === href || pathname.startsWith(href + '/')
           return (
-            <Link
+            <motion.div
               key={href}
-              href={href}
-              className={clsx(
-                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-                isActive
-                  ? 'bg-orion-accent/10 text-orion-accent border-r-2 border-orion-accent'
-                  : 'text-orion-muted hover:text-orion-text hover:bg-orion-card'
-              )}
+              initial={{ opacity: 0, x: -16 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.05, duration: 0.3, ease: 'easeOut' }}
             >
-              <Icon className="w-4 h-4 flex-shrink-0" />
-              <span className="flex-1">{label}</span>
-              {showAgentBadge && workingCount > 0 && (
-                <span className="bg-yellow-500 text-black text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                  {workingCount}
-                </span>
-              )}
-            </Link>
+              <Link
+                href={href}
+                className={clsx(
+                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200',
+                  isActive
+                    ? 'bg-orion-accent/10 text-orion-accent border-r-2 border-orion-accent'
+                    : 'text-orion-muted hover:text-orion-text hover:bg-orion-card hover:translate-x-0.5'
+                )}
+              >
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                <span className="flex-1">{label}</span>
+                {showAgentBadge && workingCount > 0 && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="bg-yellow-500 text-black text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold"
+                  >
+                    {workingCount}
+                  </motion.span>
+                )}
+              </Link>
+            </motion.div>
           )
         })}
       </nav>

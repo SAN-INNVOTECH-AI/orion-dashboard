@@ -55,3 +55,28 @@ body {
 .page-enter {
   animation: fadeInUp 0.35s ease both;
 }
+
+/* ── Input validation animations ──────────── */
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-down {
+  animation: slideDown 0.2s ease both;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-5px); }
+  40%       { transform: translateX(5px); }
+  60%       { transform: translateX(-4px); }
+  80%       { transform: translateX(4px); }
+}
+.shake { animation: shake 0.35s ease both; }
+
+/* ── Pulse dot for live indicators ────────── */
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.8); }
+}
+.pulse-dot { animation: pulseDot 2s ease-in-out infinite; }
