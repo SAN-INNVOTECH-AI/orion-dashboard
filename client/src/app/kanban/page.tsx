@@ -133,8 +133,9 @@ export default function KanbanPage() {
         </div>
       )}
 
-      {/* Project selector — only when projects exist */}
+      {/* Project selector + board — only when projects exist */}
       {projects.length > 0 && (
+      <>
       <div className="flex items-center gap-4 mb-6">
         <select
           value={selectedProject}
@@ -201,6 +202,7 @@ export default function KanbanPage() {
           })}
         </div>
       </DragDropContext>
+      </>
       )}
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editTask ? 'Edit Task' : 'New Task'}>
