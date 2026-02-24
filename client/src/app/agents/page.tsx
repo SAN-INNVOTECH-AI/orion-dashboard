@@ -96,7 +96,7 @@ export default function AgentsPage() {
   return (
     <AppLayout title="Agent Fleet">
       <div className="mb-6">
-        <p className="text-orion-muted text-sm">SAN Innvotech — {agents.length} Specialized AI Agents</p>
+        <p className="text-orion-muted text-sm">{agents.length} Specialized AI Agents · SAN Innvotech</p>
       </div>
 
       {loading ? (

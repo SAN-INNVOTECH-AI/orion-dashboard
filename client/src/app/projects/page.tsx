@@ -138,7 +138,7 @@ export default function ProjectsPage() {
                       <td className="py-3 pr-4 text-orion-text font-medium max-w-48 truncate">{p.name}</td>
                       <td className="py-3 pr-4"><Badge type="status" value={p.status} /></td>
                       <td className="py-3 pr-4"><Badge type="priority" value={p.priority} /></td>
-                      <td className="py-3 pr-4 text-orion-muted max-w-48 truncate">{p.description || '—'}</td>
+                      <td className="py-3 pr-4 text-orion-muted max-w-48 truncate">{p.description || 'No description'}</td>
                       <td className="py-3 pr-4 text-orion-muted">{new Date(p.created_at).toLocaleDateString()}</td>
                       <td className="py-3">
                         {canEdit && (
@@ -158,7 +158,7 @@ export default function ProjectsPage() {
                 {projects.length === 0 && (
                   <tr>
                     <td colSpan={6} className="py-12 text-center text-orion-muted">
-                      No projects yet — create your first one above
+                      No projects yet. Create your first one above.
                     </td>
                   </tr>
                 )}

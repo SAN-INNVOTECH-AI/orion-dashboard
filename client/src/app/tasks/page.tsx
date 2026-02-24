@@ -188,7 +188,7 @@ export default function TasksPage() {
                 {tasks.length === 0 && (
                   <tr>
                     <td colSpan={6} className="py-12 text-center text-orion-muted">
-                      No tasks yet — create your first task above
+                      No tasks yet. Create your first task above.
                     </td>
                   </tr>
                 )}

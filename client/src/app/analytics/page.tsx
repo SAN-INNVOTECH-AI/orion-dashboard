@@ -98,7 +98,8 @@ export default function AnalyticsPage() {
 
         {/* AI Cost Trend */}
         <Card>
-          <h2 className="text-orion-text font-semibold mb-4">AI Cost Trend — Total: ${analytics?.summary?.totalCost?.toFixed(4) || '0.0000'}</h2>
+          <h2 className="text-orion-text font-semibold mb-1">AI Cost Trend</h2>
+          <p className="text-orion-muted text-xs mb-4">Total: ${analytics?.summary?.totalCost?.toFixed(4) || '0.0000'}</p>
           {analytics?.aiCostTrend?.length ? (
             <ResponsiveContainer width="100%" height={250}>
               <AreaChart data={analytics.aiCostTrend}>
