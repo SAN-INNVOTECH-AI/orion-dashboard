@@ -66,6 +66,10 @@ module.exports = function executeRoute(db, sseClients) {
       broadcast({ type: 'task_update', taskId, status, notes, updatedAt: n })
     }
 
+    // Optional phase range (e.g. run only phases 1-2 for approval gate)
+    const minPhase = parseInt(req.query.min_phase) || 1
+    const maxPhase = parseInt(req.query.max_phase) || 99
+
     // Get all tasks for this project, ordered by phase
     const tasks = db.prepare(
       `SELECT t.*, a.name as agent_name, a.type as agent_type
@@ -85,7 +89,7 @@ module.exports = function executeRoute(db, sseClients) {
       phaseMap[phase].push(t)
     })
 
-    const phases = Object.keys(phaseMap).map(Number).sort((a, b) => a - b)
+    const phases = Object.keys(phaseMap).map(Number).sort((a, b) => a - b).filter(p => p >= minPhase && p <= maxPhase)
 
     // Respond immediately — execution runs async
     res.json({
@@ -95,6 +99,7 @@ module.exports = function executeRoute(db, sseClients) {
         project_id,
         tasks: tasks.length,
         phases: phases.length,
+        awaiting_approval: maxPhase < 7,
       },
     })
 
