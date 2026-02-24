@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/authStore'
 import { useThemeStore } from '@/store/themeStore'
 import { motion } from 'framer-motion'
-import { Lock, Eye, EyeOff, Sun, Moon } from 'lucide-react'
+import { Eye, EyeOff, Sun, Moon } from 'lucide-react'
 
 function OrionLogo({ size = 56 }: { size?: number }) {
   return (
@@ -25,7 +25,8 @@ function OrionLogo({ size = 56 }: { size?: number }) {
 }
 
 export default function LoginPage() {
-  const [code, setCode]         = useState('')
+  const [email, setEmail]       = useState('')
+  const [password, setPassword] = useState('')
   const [show, setShow]         = useState(false)
   const [error, setError]       = useState('')
   const [loading, setLoading]   = useState(false)
@@ -40,14 +41,14 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!code.trim()) return
+    if (!email.trim() || !password.trim()) return
     setError('')
     setLoading(true)
     try {
-      await login('admin', code)
+      await login(email, password)
       router.push('/dashboard')
     } catch {
-      setError('Invalid access code. Please try again.')
+      setError('Invalid credentials. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -109,14 +110,23 @@ export default function LoginPage() {
           transition={{ delay: 0.25, duration: 0.4 }}
         >
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-orion-muted" />
+            <input
+              type="text"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Username"
+              className="w-full bg-orion-darker border border-orion-border rounded-xl px-4 py-3 text-orion-text placeholder-orion-muted focus:outline-none focus:border-orion-accent transition-colors text-sm"
+              autoFocus
+            />
+          </div>
+
+          <div className="relative">
             <input
               type={show ? 'text' : 'password'}
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="Access code"
-              className="w-full bg-orion-darker border border-orion-border rounded-xl pl-10 pr-10 py-3 text-orion-text placeholder-orion-muted focus:outline-none focus:border-orion-accent transition-colors text-sm"
-              autoFocus
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              className="w-full bg-orion-darker border border-orion-border rounded-xl pl-4 pr-10 py-3 text-orion-text placeholder-orion-muted focus:outline-none focus:border-orion-accent transition-colors text-sm"
             />
             <button
               type="button"
