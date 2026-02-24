@@ -11,11 +11,11 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import { FolderOpen, CheckSquare, Bot, DollarSign } from 'lucide-react'
 
 interface Analytics {
-  projectsByStatus: Record<string, number>
-  tasksByPriority: Record<string, number>
-  aiUsageTrend: { date: string; cost: number }[]
-  totalCost: number
-  agentUtilization: { name: string; count: number }[]
+  projectsByStatus: { status: string; count: number }[]
+  tasksByPriority: { priority: string; count: number }[]
+  aiCostTrend: { date: string; cost: number }[]
+  agentUtilization: { name: string; assigned_tasks_count: number }[]
+  summary: { totalCost: number }
 }
 
 export default function DashboardPage() {
@@ -47,7 +47,7 @@ export default function DashboardPage() {
 
   const openTasks = tasks.filter((t) => t.status === 'todo' || t.status === 'in_progress').length
   const workingAgents = liveAgents.filter((a) => a.status === 'working').length
-  const monthlyCost = analytics?.totalCost?.toFixed(2) || '0.00'
+  const monthlyCost = analytics?.summary?.totalCost?.toFixed(2) || '0.00'
 
   const stats = [
     { label: 'Total Projects', value: projects.length, icon: FolderOpen, color: 'text-blue-400' },
@@ -79,9 +79,9 @@ export default function DashboardPage() {
         {/* Cost Trend */}
         <Card>
           <h2 className="text-orion-text font-semibold mb-4">AI Cost Trend</h2>
-          {analytics?.aiUsageTrend?.length ? (
+          {analytics?.aiCostTrend?.length ? (
             <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={analytics.aiUsageTrend}>
+              <AreaChart data={analytics.aiCostTrend}>
                 <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 11 }} />
                 <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
                 <Tooltip contentStyle={{ background: '#1a1f2e', border: '1px solid #2a3040', borderRadius: 8 }} />

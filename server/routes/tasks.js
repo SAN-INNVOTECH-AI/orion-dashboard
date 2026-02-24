@@ -9,7 +9,8 @@ module.exports = function (db) {
     try {
       const { project_id, assigned_agent } = req.query;
       let sql = `
-        SELECT t.*, u.name as assigned_to_name, p.name as project_name, a.name as agent_name, a.type as agent_type
+        SELECT t.*, u.name as assigned_to_name, p.name as project_name,
+               a.name as assigned_agent_name, a.type as agent_type, a.status as assigned_agent_status
         FROM tasks t
         LEFT JOIN users u ON t.assigned_to = u.id
         LEFT JOIN projects p ON t.project_id = p.id

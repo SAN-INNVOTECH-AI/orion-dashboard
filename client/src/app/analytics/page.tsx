@@ -12,11 +12,11 @@ import {
 } from 'recharts'
 
 interface Analytics {
-  projectsByStatus: { name: string; value: number }[]
-  tasksByPriority: { name: string; value: number }[]
-  aiUsageTrend: { date: string; cost: number }[]
-  agentUtilization: { name: string; count: number }[]
-  totalCost: number
+  projectsByStatus: { status: string; count: number }[]
+  tasksByPriority: { priority: string; count: number }[]
+  aiCostTrend: { date: string; cost: number }[]
+  agentUtilization: { name: string; assigned_tasks_count: number }[]
+  summary: { totalCost: number; totalProjects: number; totalTasks: number }
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -48,9 +48,9 @@ export default function AnalyticsPage() {
           {analytics?.projectsByStatus?.length ? (
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
-                <Pie data={analytics.projectsByStatus} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                <Pie data={analytics.projectsByStatus} dataKey="count" nameKey="status" cx="50%" cy="50%" outerRadius={80} label>
                   {analytics.projectsByStatus.map((entry, i) => (
-                    <Cell key={i} fill={STATUS_COLORS[entry.name] || '#6366f1'} />
+                    <Cell key={i} fill={STATUS_COLORS[entry.status] || '#6366f1'} />
                   ))}
                 </Pie>
                 <Tooltip contentStyle={{ background: '#1a1f2e', border: '1px solid #2a3040', borderRadius: 8 }} />
@@ -66,12 +66,12 @@ export default function AnalyticsPage() {
           {analytics?.tasksByPriority?.length ? (
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={analytics.tasksByPriority}>
-                <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                <XAxis dataKey="priority" tick={{ fill: '#94a3b8', fontSize: 11 }} />
                 <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
                 <Tooltip contentStyle={{ background: '#1a1f2e', border: '1px solid #2a3040', borderRadius: 8 }} />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                   {analytics.tasksByPriority.map((entry, i) => (
-                    <Cell key={i} fill={PRIORITY_COLORS[entry.name] || '#6366f1'} />
+                    <Cell key={i} fill={PRIORITY_COLORS[entry.priority] || '#6366f1'} />
                   ))}
                 </Bar>
               </BarChart>
@@ -81,10 +81,10 @@ export default function AnalyticsPage() {
 
         {/* AI Cost Trend */}
         <Card>
-          <h2 className="text-orion-text font-semibold mb-4">AI Cost Trend — Total: ${analytics?.totalCost?.toFixed(4) || '0.0000'}</h2>
-          {analytics?.aiUsageTrend?.length ? (
+          <h2 className="text-orion-text font-semibold mb-4">AI Cost Trend — Total: ${analytics?.summary?.totalCost?.toFixed(4) || '0.0000'}</h2>
+          {analytics?.aiCostTrend?.length ? (
             <ResponsiveContainer width="100%" height={250}>
-              <AreaChart data={analytics.aiUsageTrend}>
+              <AreaChart data={analytics.aiCostTrend}>
                 <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 10 }} />
                 <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
                 <Tooltip contentStyle={{ background: '#1a1f2e', border: '1px solid #2a3040', borderRadius: 8 }} />
@@ -97,13 +97,13 @@ export default function AnalyticsPage() {
         {/* Agent Utilization */}
         <Card>
           <h2 className="text-orion-text font-semibold mb-4">Agent Utilization (Tasks Assigned)</h2>
-          {analytics?.agentUtilization?.length ? (
+          {analytics?.agentUtilization?.filter(a => a.assigned_tasks_count > 0).length ? (
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={analytics.agentUtilization.slice(0, 10)} layout="vertical">
                 <XAxis type="number" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                <YAxis type="category" dataKey="name" tick={{ fill: '#94a3b8', fontSize: 10 }} width={120} />
+                <YAxis type="category" dataKey="name" tick={{ fill: '#94a3b8', fontSize: 10 }} width={130} />
                 <Tooltip contentStyle={{ background: '#1a1f2e', border: '1px solid #2a3040', borderRadius: 8 }} />
-                <Bar dataKey="count" fill="#6366f1" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="assigned_tasks_count" fill="#6366f1" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : <p className="text-orion-muted text-sm">No assignment data yet</p>}

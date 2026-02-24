@@ -44,11 +44,11 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
-            label="Email"
-            type="email"
+            label="Username"
+            type="text"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="admin@saninnvotech.com"
+            placeholder="admin"
             required
           />
           <Input
