@@ -139,27 +139,40 @@ export default function DashboardPage() {
       {/* Live Agent Strip */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.4 }}>
         <Card>
-          <h2 className="text-orion-text font-semibold mb-3 flex items-center gap-2">
-            Live Agent Status
-            <span className="flex items-center gap-1 text-xs text-green-400 font-normal">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 pulse-dot inline-block" />
-              live
-            </span>
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-orion-text font-semibold flex items-center gap-2">
+              Live Agent Status
+              <span className="flex items-center gap-1 text-xs text-green-400 font-normal">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 pulse-dot inline-block" />
+                live
+              </span>
+            </h2>
+            <div className="flex items-center gap-3 text-xs text-orion-muted">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" /> Working: {workingAgents}</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-500 inline-block" /> Idle: {liveAgents.length - workingAgents}</span>
+            </div>
+          </div>
           <div className="flex flex-wrap gap-2">
-            {liveAgents.map((agent, i) => (
-              <motion.div
-                key={agent.id}
-                initial={{ opacity: 0, scale: 0.85 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.55 + i * 0.02 }}
-                className="flex items-center gap-1.5 bg-orion-darker border border-orion-border rounded-full px-3 py-1 hover:border-orion-accent/40 transition-colors"
-              >
-                <AgentStatusDot status={agent.status} />
-                <span className="text-orion-muted text-xs truncate max-w-24">{agent.name.replace(' Agent', '')}</span>
-              </motion.div>
-            ))}
-            {liveAgents.length === 0 && <p className="text-orion-muted text-sm">Loading agents…</p>}
+            {liveAgents.map((agent, i) => {
+              const isWorking = agent.status === 'working'
+              return (
+                <motion.div
+                  key={agent.id}
+                  initial={{ opacity: 0, scale: 0.85 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.55 + i * 0.02 }}
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1 border transition-colors ${
+                    isWorking
+                      ? 'bg-yellow-400/10 border-yellow-400/40 text-yellow-300'
+                      : 'bg-orion-darker border-orion-border text-orion-muted hover:border-orion-accent/30'
+                  }`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isWorking ? 'bg-yellow-400 animate-pulse' : 'bg-gray-500'}`} />
+                  <span className="text-xs truncate max-w-24">{agent.name.replace(' Agent', '')}</span>
+                </motion.div>
+              )
+            })}
+            {liveAgents.length === 0 && <p className="text-orion-muted text-sm">Loading agents...</p>}
           </div>
         </Card>
       </motion.div>
