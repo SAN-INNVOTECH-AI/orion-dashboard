@@ -94,15 +94,15 @@ export default function UsersPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-orion-border">
+                <tr className="border-b border-white/[0.08]">
                   {['Name', 'Email', 'Role', 'Created', 'Actions'].map((h) => (
-                    <th key={h} className="text-left text-orion-muted font-medium pb-3 pr-4">{h}</th>
+                    <th key={h} className="text-left text-orion-muted font-medium pb-3 pr-4 text-xs uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {users.map((u) => (
-                  <tr key={u.id} className="border-b border-orion-border/50 hover:bg-orion-darker/30 transition-colors">
+                  <tr key={u.id} className="border-b border-white/[0.05] glass-row transition-colors">
                     <td className="py-3 pr-4 text-orion-text font-medium">{u.name}</td>
                     <td className="py-3 pr-4 text-orion-muted">{u.email}</td>
                     <td className="py-3 pr-4"><Badge type="role" value={u.role} /></td>

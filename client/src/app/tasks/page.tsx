@@ -155,9 +155,9 @@ export default function TasksPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-orion-border">
+                <tr className="border-b border-white/[0.08]">
                   {['Title', 'Project', 'Status', 'Priority', 'Assigned Agent', 'Created'].map((h) => (
-                    <th key={h} className="text-left text-orion-muted font-medium pb-3 pr-4">{h}</th>
+                    <th key={h} className="text-left text-orion-muted font-medium pb-3 pr-4 text-xs uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -165,7 +165,7 @@ export default function TasksPage() {
                 {tasks.map((t) => (
                   <tr
                     key={t.id}
-                    className="border-b border-orion-border/50 hover:bg-orion-darker/30 transition-colors cursor-pointer"
+                    className="border-b border-white/[0.05] glass-row transition-colors cursor-pointer"
                     onClick={() => openEdit(t)}
                   >
                     <td className="py-3 pr-4 text-orion-text font-medium max-w-48 truncate">{t.title}</td>
@@ -219,7 +219,7 @@ export default function TasksPage() {
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               rows={2}
               placeholder="Optional description..."
-              className="bg-orion-card border border-orion-border rounded-lg px-3 py-2 text-orion-text placeholder-orion-muted w-full focus:outline-none focus:border-orion-accent resize-none text-sm"
+              className="glass border border-white/10 rounded-lg px-3 py-2 text-orion-text placeholder-orion-muted w-full focus:outline-none focus:border-[#00f5ff]/50 resize-none text-sm transition-all"
             />
           </div>
 

@@ -39,11 +39,12 @@ const PRIORITY_COLORS: Record<string, string> = {
 }
 
 const tooltipStyle = {
-  background: 'rgba(26,31,46,0.9)',
+  background: 'rgba(10,10,15,0.9)',
   border: '1px solid rgba(255,255,255,0.1)',
   borderRadius: 12,
-  color: 'var(--orion-text)',
-  backdropFilter: 'blur(12px)',
+  color: '#e2e8f0',
+  backdropFilter: 'blur(16px)',
+  boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
 }
 
 function AnimatedCounter({ value, prefix = '', suffix = '' }: { value: number; prefix?: string; suffix?: string }) {
@@ -107,17 +108,17 @@ export default function AnalyticsPage() {
       {analytics?.summary && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           {[
-            { label: 'Total Projects', value: analytics.summary.totalProjects || 0, color: 'text-blue-400' },
-            { label: 'Total Tasks', value: analytics.summary.totalTasks || 0, color: 'text-yellow-400' },
-            { label: 'Total AI Cost', value: analytics.summary.totalCost || 0, color: 'text-green-400', prefix: '$' },
-          ].map(({ label, value, color, prefix }, i) => (
+            { label: 'Total Projects', value: analytics.summary.totalProjects || 0, color: 'text-blue-400', border: 'border-l-accent-blue' },
+            { label: 'Total Tasks', value: analytics.summary.totalTasks || 0, color: 'text-yellow-400', border: 'border-l-accent-yellow' },
+            { label: 'Total AI Cost', value: analytics.summary.totalCost || 0, color: 'text-green-400', prefix: '$', border: 'border-l-accent-green' },
+          ].map(({ label, value, color, prefix, border }, i) => (
             <motion.div
               key={label}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.08, duration: 0.4 }}
             >
-              <Card hoverable>
+              <Card hoverable className={border}>
                 <p className="text-orion-muted text-sm">{label}</p>
                 <p className={`font-bold text-2xl mt-1 ${color}`}>
                   <AnimatedCounter value={typeof value === 'number' ? Math.round(value) : 0} prefix={prefix || ''} />
@@ -188,7 +189,13 @@ export default function AnalyticsPage() {
                   <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 10 }} />
                   <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
                   <Tooltip contentStyle={tooltipStyle} />
-                  <Area type="monotone" dataKey="cost" stroke="#6366f1" fill="#6366f1" fillOpacity={0.2} />
+                  <defs>
+                    <linearGradient id="analyticsCostGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#00f5ff" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="#00f5ff" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <Area type="monotone" dataKey="cost" stroke="#00f5ff" fill="url(#analyticsCostGrad)" fillOpacity={1} />
                 </AreaChart>
               </ResponsiveContainer>
             ) : <p className="text-orion-muted text-sm">No AI usage data yet</p>}

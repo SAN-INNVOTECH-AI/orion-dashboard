@@ -23,11 +23,17 @@ interface Project { id: string; name: string }
 interface Agent { id: string; name: string; status: string }
 
 const columns = [
-  { id: 'todo', label: 'To Do' },
-  { id: 'in_progress', label: 'In Progress' },
-  { id: 'review', label: 'Review' },
-  { id: 'done', label: 'Done' },
+  { id: 'todo', label: 'To Do', accent: 'border-t-2 border-t-gray-500/50' },
+  { id: 'in_progress', label: 'In Progress', accent: 'border-t-2 border-t-[#00f5ff]/50' },
+  { id: 'review', label: 'Review', accent: 'border-t-2 border-t-yellow-500/50' },
+  { id: 'done', label: 'Done', accent: 'border-t-2 border-t-green-500/50' },
 ]
+const priorityBorderClass: Record<string, string> = {
+  low: 'border-l-2 border-l-gray-500/40',
+  medium: 'border-l-2 border-l-blue-500/40',
+  high: 'border-l-2 border-l-orange-500/50',
+  urgent: 'border-l-2 border-l-red-500/60',
+}
 const priorityOptions = [
   { value: 'low', label: 'Low' }, { value: 'medium', label: 'Medium' },
   { value: 'high', label: 'High' }, { value: 'urgent', label: 'Urgent' },
@@ -167,7 +173,7 @@ export default function KanbanPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: colIdx * 0.08, duration: 0.4 }}
               >
-                <div className="flex items-center justify-between mb-3">
+                <div className={`flex items-center justify-between mb-3 glass-strong rounded-lg px-3 py-2 ${col.accent}`}>
                   <div className="flex items-center gap-2">
                     <h3 className="text-orion-text font-semibold text-sm">{col.label}</h3>
                     <span className="bg-white/10 text-orion-muted text-xs rounded-full px-2 backdrop-blur-sm">{colTasks.length}</span>
@@ -195,8 +201,8 @@ export default function KanbanPage() {
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                               onClick={() => openEdit(task)}
-                              className={`glass-card p-3 mb-2 cursor-pointer hover:border-orion-accent/50 transition-all duration-200 ${
-                                snapshot.isDragging ? 'shadow-lg shadow-orion-accent/20 rotate-1 glow-accent-strong' : ''
+                              className={`glass-card p-3 mb-2 cursor-pointer hover:border-[#00f5ff]/40 transition-all duration-200 ${priorityBorderClass[task.priority] || ''} ${
+                                snapshot.isDragging ? 'shadow-lg shadow-[#00f5ff]/20 scale-105 glow-cyan' : ''
                               }`}
                             >
                               <p className="text-orion-text text-sm font-medium mb-2">{task.title}</p>

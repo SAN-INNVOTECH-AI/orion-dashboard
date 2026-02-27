@@ -32,11 +32,11 @@ const typeIcons: Record<string, React.ElementType> = {
   maintenance_support: Wrench, video_generation: Video, default: BarChart3,
 }
 
-const statusGlowClass: Record<string, string> = {
-  idle: '',
-  working: 'pulse-glow-blue',
-  completed: 'pulse-glow-green',
-  error: 'pulse-glow-red',
+const statusBorderClass: Record<string, string> = {
+  idle: 'border-t-2 border-t-green-500/40',
+  working: 'border-t-2 border-t-[#00f5ff]/60 pulse-glow-cyan',
+  completed: 'border-t-2 border-t-green-500/60 pulse-glow-green',
+  error: 'border-t-2 border-t-red-500/60 pulse-glow-red',
 }
 
 function timeAgo(dateStr: string) {
@@ -68,7 +68,8 @@ export default function AgentsPage() {
 
   useEffect(() => {
     loadAgents()
-    const es = new EventSource('http://localhost:5000/live-progress')
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+    const es = new EventSource(`${apiBase}/live-progress`)
     es.onmessage = (e) => {
       try {
         const d = JSON.parse(e.data)
@@ -118,9 +119,11 @@ export default function AgentsPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                className="will-change-transform"
               >
                 <Card
-                  className={`${isPM ? 'border-orion-accent/40 glow-accent' : ''} ${statusGlowClass[agent.status] || ''}`}
+                  hoverable
+                  className={`${isPM ? 'border-orion-accent/40 glow-accent' : ''} ${statusBorderClass[agent.status] || ''}`}
                 >
                   <div className="flex items-start gap-3 mb-3">
                     <div className={`p-2 rounded-lg backdrop-blur-sm ${isPM ? 'bg-orion-accent/20' : 'bg-white/5'}`}>
@@ -184,15 +187,15 @@ export default function AgentsPage() {
         {report && (
           <div>
             <div className="grid grid-cols-3 gap-4 mb-6">
-              <div className="glass rounded-lg p-3 text-center">
+              <div className="glass-card rounded-xl p-4 text-center border-l-accent-blue">
                 <p className="text-2xl font-bold text-orion-text">{report.analyzed}</p>
                 <p className="text-orion-muted text-xs">Projects Analyzed</p>
               </div>
-              <div className="glass rounded-lg p-3 text-center">
+              <div className="glass-card rounded-xl p-4 text-center border-l-accent-yellow">
                 <p className="text-2xl font-bold text-yellow-400">{report.issues_found}</p>
                 <p className="text-orion-muted text-xs">Issues Found</p>
               </div>
-              <div className="glass rounded-lg p-3 text-center">
+              <div className="glass-card rounded-xl p-4 text-center border-l-accent-green">
                 <p className="text-2xl font-bold text-green-400">{report.tasks_created}</p>
                 <p className="text-orion-muted text-xs">Tasks Created</p>
               </div>
@@ -202,10 +205,10 @@ export default function AgentsPage() {
                 <h4 className="text-orion-text font-semibold mb-3">Agent Assignments</h4>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {report.assignments.map((a, i) => (
-                    <div key={i} className="flex items-center gap-2 p-2 glass rounded-lg text-sm">
+                    <div key={i} className="flex items-center gap-2 p-2 glass rounded-lg text-sm glass-row">
                       <span className="text-orion-text flex-1 truncate">{a.task}</span>
                       <span className="text-orion-muted">&rarr;</span>
-                      <span className="text-orion-accent text-xs">{a.agent}</span>
+                      <span className="text-[#00f5ff] text-xs">{a.agent}</span>
                     </div>
                   ))}
                 </div>

@@ -8,7 +8,8 @@ import { clsx } from 'clsx'
 import { motion } from 'framer-motion'
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard',   icon: LayoutDashboard },
+  { href: '/orion',     label: 'Orion',        icon: Sparkles },
+  { href: '/dashboard', label: 'Dashboard',    icon: LayoutDashboard },
   { href: '/ingest',    label: 'New Project',  icon: Sparkles },
   { href: '/projects',  label: 'Projects',     icon: FolderOpen },
   { href: '/kanban',    label: 'Kanban',       icon: Columns },
@@ -25,29 +26,30 @@ export default function Sidebar() {
   const workingCount = agents.filter((a) => a.status === 'working').length
 
   return (
-    <div className="fixed left-0 top-0 h-screen w-64 glass-strong flex flex-col z-40 border-r border-white/10">
-      <div className="p-5 border-b border-white/10 flex items-center gap-3">
+    <div className="fixed left-0 top-0 h-screen w-64 glass-sidebar flex flex-col z-40">
+      <div className="p-5 border-b border-white/[0.06] flex items-center gap-3">
         <svg width="30" height="30" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
-          <circle cx="28" cy="28" r="24" stroke="#6366f1" strokeWidth="1.5" opacity="0.35" />
-          <circle cx="28" cy="28" r="14" stroke="#6366f1" strokeWidth="1.5" opacity="0.6" />
+          <circle cx="28" cy="28" r="24" stroke="#00f5ff" strokeWidth="1.5" opacity="0.25" />
+          <circle cx="28" cy="28" r="14" stroke="#6366f1" strokeWidth="1.5" opacity="0.5" />
           <circle cx="28" cy="28" r="4.5" fill="#6366f1" />
-          <circle cx="28" cy="4"  r="3"   fill="#6366f1" />
+          <circle cx="28" cy="4"  r="3"   fill="#00f5ff" />
           <circle cx="52" cy="28" r="2.5" fill="#6366f1" opacity="0.7" />
-          <circle cx="28" cy="52" r="2"   fill="#6366f1" opacity="0.5" />
+          <circle cx="28" cy="52" r="2"   fill="#8b5cf6" opacity="0.5" />
           <circle cx="4"  cy="28" r="2.5" fill="#6366f1" opacity="0.7" />
-          <circle cx="44" cy="12" r="1.5" fill="#6366f1" opacity="0.4" />
-          <circle cx="12" cy="44" r="1.5" fill="#6366f1" opacity="0.4" />
+          <circle cx="44" cy="12" r="1.5" fill="#00f5ff" opacity="0.4" />
+          <circle cx="12" cy="44" r="1.5" fill="#8b5cf6" opacity="0.4" />
         </svg>
         <div>
-          <p className="text-orion-accent font-bold text-base tracking-wide leading-none">ORION</p>
+          <p className="text-[#00f5ff] font-bold text-base tracking-wide leading-none glow-text">ORION</p>
           <p className="text-orion-muted text-xs mt-0.5">SAN Innvotech AI</p>
         </div>
       </div>
 
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {navItems.map(({ href, label, icon: Icon, adminOnly, showAgentBadge }, i) => {
           if (adminOnly && user?.role !== 'admin') return null
           const isActive = pathname === href || pathname.startsWith(href + '/')
+          const isOrion = href === '/orion'
           return (
             <motion.div
               key={href}
@@ -60,11 +62,13 @@ export default function Sidebar() {
                 className={clsx(
                   'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200',
                   isActive
-                    ? 'bg-orion-accent/15 text-orion-accent border-r-2 border-orion-accent glow-accent'
+                    ? isOrion
+                      ? 'glass-strong text-[#00f5ff] border-l-2 border-[#00f5ff] glow-cyan'
+                      : 'glass-strong text-orion-accent border-l-2 border-orion-accent glow-accent'
                     : 'text-orion-muted hover:text-orion-text hover:bg-white/5 hover:translate-x-0.5'
                 )}
               >
-                <Icon className="w-4 h-4 flex-shrink-0" />
+                <Icon className={clsx('w-4 h-4 flex-shrink-0', isOrion && isActive && 'text-[#00f5ff]')} />
                 <span className="flex-1">{label}</span>
                 {showAgentBadge && workingCount > 0 && (
                   <motion.span
@@ -81,7 +85,7 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-white/10">
+      <div className="p-4 border-t border-white/[0.06]">
         <p className="text-orion-muted text-xs">&copy; 2026 SAN Innvotech. All Rights Reserved.</p>
       </div>
     </div>

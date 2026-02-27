@@ -302,7 +302,7 @@ export default function IngestPage() {
                 </div>
 
                 {/* PM agent selection summary */}
-                <div className="glass rounded-xl p-4 space-y-3">
+                <div className="glass-card rounded-xl p-4 space-y-3 border-l-accent-indigo">
                   <p className="text-orion-accent text-xs font-semibold uppercase tracking-wide">PM Agent Selection</p>
                   {ingestResult.selection_reasoning && (
                     <p className="text-orion-muted text-xs italic">{ingestResult.selection_reasoning}</p>
@@ -332,8 +332,8 @@ export default function IngestPage() {
                 </div>
 
                 {stackDecision?.recommended_stack && (
-                  <div className="glass rounded-xl p-4 space-y-3">
-                    <p className="text-orion-accent text-xs font-semibold uppercase tracking-wide">Tech Stack Strategist (Phase 0)</p>
+                  <div className="glass-card rounded-xl p-4 space-y-3 border-l-accent-cyan">
+                    <p className="text-[#00f5ff] text-xs font-semibold uppercase tracking-wide glow-text">Tech Stack Strategist (Phase 0)</p>
                     {stackDecision.reasoning && <p className="text-orion-muted text-xs">{stackDecision.reasoning}</p>}
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       {Object.entries(stackDecision.recommended_stack).map(([k, v]) => (

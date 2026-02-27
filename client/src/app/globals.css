@@ -17,6 +17,8 @@
   --orion-danger: #ef4444;
   --orion-tooltip-bg: #1a1f2e;
   --orion-tooltip-border: #2a3040;
+  --orion-cyan: #00f5ff;
+  --orion-purple: #8b5cf6;
 }
 
 /* ── Theme: Light ──────────────────────────── */
@@ -47,62 +49,48 @@ body {
 ::-webkit-scrollbar-track { background: var(--orion-dark); }
 ::-webkit-scrollbar-thumb { background: var(--orion-border); border-radius: 3px; }
 
-/* ── Page transition animations ───────────── */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.page-enter {
-  animation: fadeInUp 0.35s ease both;
-}
-
-/* ── Input validation animations ──────────── */
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.animate-slide-down {
-  animation: slideDown 0.2s ease both;
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20%       { transform: translateX(-5px); }
-  40%       { transform: translateX(5px); }
-  60%       { transform: translateX(-4px); }
-  80%       { transform: translateX(4px); }
-}
-.shake { animation: shake 0.35s ease both; }
-
-/* ── Pulse dot for live indicators ────────── */
-@keyframes pulseDot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.5; transform: scale(0.8); }
-}
-.pulse-dot { animation: pulseDot 2s ease-in-out infinite; }
-
 /* ── Glassmorphism Design System ─────────── */
 .glass {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
 }
 
 .glass-strong {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(48px);
+  -webkit-backdrop-filter: blur(48px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 1rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.glass-sidebar {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(64px);
+  -webkit-backdrop-filter: blur(64px);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.glass-header {
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 /* Light mode glass adjustments */
@@ -115,6 +103,14 @@ body {
   background: rgba(255, 255, 255, 0.75);
   border-color: rgba(255, 255, 255, 0.5);
 }
+.light .glass-sidebar {
+  background: rgba(255, 255, 255, 0.7);
+  border-right-color: rgba(0, 0, 0, 0.06);
+}
+.light .glass-header {
+  background: rgba(255, 255, 255, 0.6);
+  border-bottom-color: rgba(0, 0, 0, 0.06);
+}
 
 /* ── Glow utilities ──────────────────────── */
 .glow-accent {
@@ -122,6 +118,9 @@ body {
 }
 .glow-accent-strong {
   box-shadow: 0 0 20px rgba(99, 102, 241, 0.3), 0 0 60px rgba(99, 102, 241, 0.1);
+}
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(0, 245, 255, 0.15), 0 0 60px rgba(0, 245, 255, 0.05);
 }
 .glow-green {
   box-shadow: 0 0 12px rgba(16, 185, 129, 0.3), 0 0 40px rgba(16, 185, 129, 0.1);
@@ -136,6 +135,14 @@ body {
   box-shadow: 0 0 12px rgba(245, 158, 11, 0.3), 0 0 40px rgba(245, 158, 11, 0.1);
 }
 
+/* Text glow */
+.glow-text {
+  text-shadow: 0 0 10px rgba(0, 245, 255, 0.3), 0 0 40px rgba(0, 245, 255, 0.1);
+}
+.glow-text-accent {
+  text-shadow: 0 0 10px rgba(99, 102, 241, 0.3), 0 0 40px rgba(99, 102, 241, 0.1);
+}
+
 /* ── Animated gradient background ────────── */
 @keyframes gradientShift {
   0%   { background-position: 0% 50%; }
@@ -145,11 +152,12 @@ body {
 .animated-gradient-bg {
   background: linear-gradient(
     135deg,
-    var(--orion-darker) 0%,
-    #0d1220 25%,
-    #0f0e1a 50%,
-    #0d1220 75%,
-    var(--orion-darker) 100%
+    #0a0a0f 0%,
+    #0d1220 20%,
+    #0f0e1a 40%,
+    #0a0f1a 60%,
+    #0d1220 80%,
+    #0a0a0f 100%
   );
   background-size: 400% 400%;
   animation: gradientShift 15s ease infinite;
@@ -166,6 +174,63 @@ body {
   background-size: 400% 400%;
 }
 
+/* ── Page transition animations ───────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-enter {
+  animation: fadeInUp 0.35s ease both;
+}
+
+/* ── Keyframe animations ─────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 8px rgba(0, 245, 255, 0.2); }
+  50%      { box-shadow: 0 0 20px rgba(0, 245, 255, 0.5); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-5px); }
+  40%       { transform: translateX(5px); }
+  60%       { transform: translateX(-4px); }
+  80%       { transform: translateX(4px); }
+}
+
+.animate-float      { animation: float 3s ease-in-out infinite; }
+.animate-pulse-glow { animation: pulseGlow 2s ease-in-out infinite; }
+.animate-slide-up   { animation: slideUp 0.5s ease both; }
+.animate-fade-in    { animation: fadeIn 0.4s ease both; }
+.animate-slide-down { animation: slideDown 0.2s ease both; }
+.shake              { animation: shake 0.35s ease both; }
+
+/* ── Pulse dot for live indicators ────────── */
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.8); }
+}
+.pulse-dot { animation: pulseDot 2s ease-in-out infinite; }
+
 /* ── Status glow pulses for agents ───────── */
 @keyframes pulseGreen {
   0%, 100% { box-shadow: 0 0 4px rgba(16, 185, 129, 0.4); }
@@ -179,6 +244,54 @@ body {
   0%, 100% { box-shadow: 0 0 4px rgba(239, 68, 68, 0.4); }
   50%      { box-shadow: 0 0 12px rgba(239, 68, 68, 0.7); }
 }
+@keyframes pulseCyan {
+  0%, 100% { box-shadow: 0 0 4px rgba(0, 245, 255, 0.3); }
+  50%      { box-shadow: 0 0 16px rgba(0, 245, 255, 0.6); }
+}
 .pulse-glow-green  { animation: pulseGreen 2s ease-in-out infinite; }
 .pulse-glow-blue   { animation: pulseBlue 2s ease-in-out infinite; }
 .pulse-glow-red    { animation: pulseRed 2s ease-in-out infinite; }
+.pulse-glow-cyan   { animation: pulseCyan 2s ease-in-out infinite; }
+
+/* ── Bokeh background for login ──────────── */
+@keyframes bokehFloat1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25%      { transform: translate(30px, -20px) scale(1.1); }
+  50%      { transform: translate(-10px, 20px) scale(0.9); }
+  75%      { transform: translate(-30px, -10px) scale(1.05); }
+}
+@keyframes bokehFloat2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(-20px, 30px) scale(1.15); }
+  66%      { transform: translate(25px, -15px) scale(0.95); }
+}
+.bokeh-1 { animation: bokehFloat1 12s ease-in-out infinite; }
+.bokeh-2 { animation: bokehFloat2 15s ease-in-out infinite; }
+
+/* ── Glass table rows ────────────────────── */
+.glass-row {
+  transition: all 0.2s ease;
+}
+.glass-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+/* ── Accent left border utilities ────────── */
+.border-l-accent-blue    { border-left: 3px solid #3b82f6; }
+.border-l-accent-yellow  { border-left: 3px solid #f59e0b; }
+.border-l-accent-indigo  { border-left: 3px solid #6366f1; }
+.border-l-accent-green   { border-left: 3px solid #10b981; }
+.border-l-accent-cyan    { border-left: 3px solid #00f5ff; }
+.border-l-accent-red     { border-left: 3px solid #ef4444; }
+
+/* ── Performance ─────────────────────────── */
+.will-change-transform {
+  will-change: transform;
+}
+
+/* ── Voice interface pulse ───────────────── */
+@keyframes voicePulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 245, 255, 0.4); }
+  50%      { transform: scale(1.05); box-shadow: 0 0 20px 10px rgba(0, 245, 255, 0); }
+}

@@ -118,9 +118,9 @@ export default function ProjectsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-orion-border">
+                <tr className="border-b border-white/[0.08]">
                   {['Name', 'Status', 'Priority', 'Description', 'Created', 'Actions'].map((h) => (
-                    <th key={h} className="text-left text-orion-muted font-medium pb-3 pr-4">{h}</th>
+                    <th key={h} className="text-left text-orion-muted font-medium pb-3 pr-4 text-xs uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -133,7 +133,7 @@ export default function ProjectsPage() {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 16 }}
                       transition={{ delay: i * 0.05, duration: 0.3 }}
-                      className="border-b border-orion-border/50 hover:bg-orion-darker/30 transition-colors"
+                      className="border-b border-white/[0.05] glass-row transition-colors"
                     >
                       <td className="py-3 pr-4 text-orion-text font-medium max-w-48 truncate">{p.name}</td>
                       <td className="py-3 pr-4"><Badge type="status" value={p.status} /></td>
@@ -186,7 +186,7 @@ export default function ProjectsPage() {
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               rows={3}
               placeholder="What is this project about? (optional)"
-              className="bg-orion-card border border-orion-border rounded-lg px-3 py-2.5 text-orion-text placeholder-orion-muted/50 w-full focus:outline-none focus:border-orion-accent resize-none text-sm transition-colors"
+              className="glass border border-white/10 rounded-lg px-3 py-2.5 text-orion-text placeholder-orion-muted/50 w-full focus:outline-none focus:border-[#00f5ff]/50 resize-none text-sm transition-all"
             />
           </div>
 
