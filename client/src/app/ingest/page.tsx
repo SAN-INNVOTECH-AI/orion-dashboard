@@ -30,7 +30,7 @@ export default function IngestPage() {
   const [nameError, setNameError] = useState('')
   const [docError, setDocError] = useState('')
 
-  const [step, setStep] = useState<'input' | 'ingesting' | 'ingested' | 'executing' | 'done'>('input')
+  const [step, setStep] = useState<'input' | 'ingesting' | 'ingested' | 'executing' | 'awaiting_approval' | 'done'>('input')
   const [projectId, setProjectId] = useState('')
   const [ingestResult, setIngestResult] = useState<{
     tasks_created: number; phases: number
@@ -39,6 +39,13 @@ export default function IngestPage() {
   const [execLog, setExecLog] = useState<string[]>([])
   const [currentPhase, setCurrentPhase] = useState(0)
   const [error, setError] = useState('')
+  const [stackDecision, setStackDecision] = useState<{
+    recommended_stack?: Record<string, string>
+    fallback_stacks?: { name: string; when_to_use: string }[]
+    reasoning?: string
+    risks?: string[]
+    execution_blueprint?: string[]
+  } | null>(null)
 
   const validate = () => {
     let ok = true
@@ -68,7 +75,8 @@ export default function IngestPage() {
       }
 
       const res = await api.post('/pm-agent/ingest', body)
-      setProjectId(res.data.data.project_id)
+      const createdProjectId = res.data.data.project_id
+      setProjectId(createdProjectId)
       setIngestResult({
         tasks_created: res.data.data.tasks_created,
         phases: res.data.data.phases,
@@ -76,6 +84,14 @@ export default function IngestPage() {
         agents_skipped: res.data.data.agents_skipped || [],
         selection_reasoning: res.data.data.selection_reasoning || '',
       })
+
+      try {
+        const stackRes = await api.post('/pm-agent/stack-select', { project_id: createdProjectId })
+        setStackDecision(stackRes.data.data || null)
+      } catch {
+        setStackDecision(null)
+      }
+
       setStep('ingested')
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Ingest failed'
@@ -84,14 +100,12 @@ export default function IngestPage() {
     }
   }
 
-  const handleExecute = async () => {
+  const runExecution = async (minPhase: number, maxPhase: number, finalRun: boolean) => {
     setStep('executing')
-    setExecLog([`Starting execution for "${projectName}"...`])
+    setExecLog(prev => prev.length ? prev : [`Starting execution for "${projectName}"...`])
 
-    // Start execution
-    api.post(`/pm-agent/execute/${projectId}`).catch(() => {})
+    api.post(`/pm-agent/execute/${projectId}?min_phase=${minPhase}&max_phase=${maxPhase}`).catch(() => {})
 
-    // Listen to SSE for live updates
     const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
     const es = new EventSource(`${apiBase}/live-progress`)
 
@@ -108,8 +122,13 @@ export default function IngestPage() {
         } else if (d.type === 'phase_done') {
           setExecLog(prev => [...prev, `Phase ${d.phase} complete.`])
         } else if (d.type === 'execution_done') {
-          setExecLog(prev => [...prev, 'All phases complete! Project is ready.'])
-          setStep('done')
+          if (finalRun) {
+            setExecLog(prev => [...prev, 'All phases complete! Project is ready.'])
+            setStep('done')
+          } else {
+            setExecLog(prev => [...prev, 'Phase 1 and 2 complete. Approval required before real build phases.'])
+            setStep('awaiting_approval')
+          }
           es.close()
         } else if (d.type === 'execution_error') {
           setExecLog(prev => [...prev, `Error: ${d.error}`])
@@ -118,6 +137,16 @@ export default function IngestPage() {
         }
       } catch {}
     }
+  }
+
+  const handleExecute = async () => {
+    setExecLog([`Starting execution for "${projectName}"...`])
+    await runExecution(1, 2, false)
+  }
+
+  const handleApproveAndContinue = async () => {
+    setExecLog(prev => [...prev, 'Approval granted. Starting real build phases (3-7)...'])
+    await runExecution(3, 7, true)
   }
 
   return (
@@ -302,13 +331,28 @@ export default function IngestPage() {
                   )}
                 </div>
 
+                {stackDecision?.recommended_stack && (
+                  <div className="bg-orion-darker rounded-xl p-4 space-y-3">
+                    <p className="text-orion-accent text-xs font-semibold uppercase tracking-wide">Tech Stack Strategist (Phase 0)</p>
+                    {stackDecision.reasoning && <p className="text-orion-muted text-xs">{stackDecision.reasoning}</p>}
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      {Object.entries(stackDecision.recommended_stack).map(([k, v]) => (
+                        <div key={k} className="bg-orion-card border border-orion-border rounded-md px-2 py-1.5">
+                          <span className="text-orion-muted">{k}: </span>
+                          <span className="text-orion-text">{v}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex gap-3">
                   <Button variant="secondary" onClick={() => router.push(`/kanban?project=${projectId}`)}>
                     View in Kanban first
                   </Button>
                   <Button variant="primary" onClick={handleExecute} className="flex-1 py-3">
                     <Play className="w-4 h-4" />
-                    Start All Agents
+                    Start Phase 1-2 (Approval Gate)
                   </Button>
                 </div>
               </div>
@@ -316,15 +360,17 @@ export default function IngestPage() {
           )}
 
           {/* STEP 3: Executing */}
-          {(step === 'executing' || step === 'done') && (
+          {(step === 'executing' || step === 'awaiting_approval' || step === 'done') && (
             <motion.div key="executing" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
               <div className="bg-orion-card border border-orion-border rounded-2xl p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-orion-text font-semibold text-lg">
-                    {step === 'done' ? 'All agents complete!' : 'Agents are working...'}
+                    {step === 'done' ? 'All agents complete!' : step === 'awaiting_approval' ? 'Awaiting your approval' : 'Agents are working...'}
                   </h2>
                   {step === 'executing' && <Loader2 className="w-5 h-5 text-orion-accent animate-spin" />}
-                  {step === 'done' && <CheckCircle className="w-5 h-5 text-green-400" />}
+                  {step === 'done' && <CheckCircle className="w-5 h-5 text-green-400" />
+                  }
+                  {step === 'awaiting_approval' && <CheckCircle className="w-5 h-5 text-yellow-400" />}
                 </div>
 
                 {/* Phase indicators */}
@@ -351,6 +397,17 @@ export default function IngestPage() {
                     </motion.p>
                   ))}
                 </div>
+
+                {step === 'awaiting_approval' && (
+                  <div className="flex gap-3 pt-2">
+                    <Button variant="secondary" onClick={() => router.push(`/kanban?project=${projectId}`)}>
+                      Review Kanban First
+                    </Button>
+                    <Button variant="primary" onClick={handleApproveAndContinue} className="flex-1">
+                      Approve and Start Real Build (Phase 3-7)
+                    </Button>
+                  </div>
+                )}
 
                 {step === 'done' && (
                   <div className="flex gap-3 pt-2">

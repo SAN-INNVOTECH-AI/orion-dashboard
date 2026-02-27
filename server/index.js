@@ -5,7 +5,9 @@ const rateLimit = require('express-rate-limit');
 const { initializeDB, seedData } = require('./db');
 const ingestRoute = require('./pm-agent/ingest');
 const executeRoute = require('./pm-agent/execute');
+const stackSelectRoute = require('./pm-agent/stack-select');
 const { authenticate } = require('./middleware/auth');
+const Anthropic = require('@anthropic-ai/sdk');
 
 const app = express();
 app.use(cors());
@@ -17,6 +19,31 @@ seedData(db);
 
 // Shared SSE client registry — used by execute route to broadcast
 const sseClients = new Set();
+
+async function checkAnthropicKey() {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    return { ok: false, reason: 'missing_api_key', message: 'ANTHROPIC_API_KEY is not set' };
+  }
+
+  try {
+    const client = new Anthropic({ apiKey });
+    await client.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 8,
+      messages: [{ role: 'user', content: 'Reply with OK only.' }],
+    });
+    return { ok: true, reason: 'validated', message: 'Anthropic key is valid' };
+  } catch (err) {
+    return {
+      ok: false,
+      reason: err?.error?.type || 'llm_check_failed',
+      status: err?.status || 500,
+      message: err?.error?.message || err.message || 'Unknown Anthropic error',
+      request_id: err?.request_id || err?.error?.request_id || null,
+    };
+  }
+}
 
 // Routes
 app.use('/auth',       require('./routes/auth')(db));
@@ -31,11 +58,27 @@ app.use('/pm-agent',   require('./pm-agent')(db));
 // Document ingest
 app.post('/pm-agent/ingest', authenticate, ingestRoute(db));
 
+// AI stack strategist
+app.post('/pm-agent/stack-select', authenticate, stackSelectRoute(db));
+
 // Sequential agent execution
 app.post('/pm-agent/execute/:project_id', authenticate, executeRoute(db, sseClients));
 
 // Health
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
+
+// LLM Health: validates Anthropic API key + connectivity
+app.get('/health/llm', async (req, res) => {
+  const result = await checkAnthropicKey();
+  const status = result.ok ? 200 : (result.status || 500);
+  res.status(status).json({
+    status: result.ok ? 'ok' : 'error',
+    provider: 'anthropic',
+    model: 'claude-haiku-4-5',
+    ...result,
+    timestamp: new Date().toISOString(),
+  });
+});
 
 // SSE Live Progress — broadcasts agent status updates + execution events
 app.get('/live-progress', (req, res) => {
@@ -74,4 +117,13 @@ app.get('/live-progress', (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Orion server running on port ${PORT}`));
+app.listen(PORT, async () => {
+  console.log(`Orion server running on port ${PORT}`);
+
+  const llm = await checkAnthropicKey();
+  if (!llm.ok) {
+    console.warn(`[startup][llm] WARNING: ${llm.message}`);
+  } else {
+    console.log('[startup][llm] Anthropic key validated.');
+  }
+});

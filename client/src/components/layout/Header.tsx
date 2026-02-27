@@ -1,5 +1,5 @@
 'use client'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { useThemeStore } from '@/store/themeStore'
 import Badge from '@/components/ui/Badge'
@@ -11,13 +11,43 @@ interface HeaderProps { title: string }
 export default function Header({ title }: HeaderProps) {
   const { user, logout } = useAuthStore()
   const { theme, toggleTheme, applyTheme } = useThemeStore()
+  const [llmOk, setLlmOk] = useState<boolean | null>(null)
 
   useEffect(() => { applyTheme(theme) }, [theme, applyTheme])
+
+  useEffect(() => {
+    let alive = true
+
+    const checkLlm = async () => {
+      try {
+        const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+        const res = await fetch(`${base}/health/llm`, { cache: 'no-store' })
+        if (!alive) return
+        setLlmOk(res.ok)
+      } catch {
+        if (!alive) return
+        setLlmOk(false)
+      }
+    }
+
+    checkLlm()
+    const timer = setInterval(checkLlm, 30000)
+
+    return () => {
+      alive = false
+      clearInterval(timer)
+    }
+  }, [])
 
   return (
     <header className="h-16 border-b border-orion-border bg-orion-darker/80 backdrop-blur-sm flex items-center justify-between px-6 flex-shrink-0 transition-colors duration-300">
       <h1 className="text-orion-text font-semibold text-lg">{title}</h1>
       <div className="flex items-center gap-3">
+        {llmOk === false && (
+          <span className="px-2 py-1 rounded-md border border-red-500/40 bg-red-500/10 text-red-400 text-xs font-medium">
+            LLM disconnected
+          </span>
+        )}
         {user && (
           <>
             <span className="text-orion-muted text-sm">{user.name}</span>
