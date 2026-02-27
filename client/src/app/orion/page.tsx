@@ -11,23 +11,12 @@ const ParticleSystem = dynamic(() => import('@/components/three/ParticleSystem')
 const HandGesture = dynamic(() => import('@/components/gesture/HandGesture'), { ssr: false })
 const VoiceInterface = dynamic(() => import('@/components/voice/VoiceInterface'), { ssr: false })
 
-const shapeLabels: Record<ParticleShape, string> = {
-  galaxy: 'Galaxy',
-  heart: 'Heart',
-  flower: 'Flower',
-}
-
-const shapeColors: Record<ParticleShape, string> = {
-  galaxy: '#00f5ff',
-  heart: '#f472b6',
-  flower: '#a78bfa',
-}
 
 export default function OrionPage() {
   const [shape, setShape] = useState<ParticleShape>('galaxy')
   const { agents, fetchAgents } = useDashboardStore()
   const [liveAgents, setLiveAgents] = useState(agents)
-  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+  const apiBase = '/api'
   const feedRef = useRef<HTMLDivElement>(null)
 
   const handleShapeChange = useCallback((newShape: ParticleShape) => {
@@ -56,6 +45,40 @@ export default function OrionPage() {
   return (
     <AppLayout title="Orion">
       <div className="relative min-h-[calc(100vh-8rem)] flex flex-col items-center justify-center">
+        <div className="absolute top-4 left-4 z-20 glass-card px-3 py-2 text-xs">
+          <span className="text-orion-muted mr-2">Live agents</span>
+          <span className="text-cyan-300 font-semibold">{workingAgents.length}</span>
+          <span className="text-orion-muted"> / {liveAgents.length}</span>
+        </div>
+
+        <motion.div
+          ref={feedRef}
+          initial={false}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+          className="absolute top-16 left-4 z-20 glass-card p-4 w-[360px]"
+        >
+          <h3 className="text-orion-text text-xs font-semibold uppercase tracking-wider mb-3 flex items-center gap-2">
+            Agent Activity
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 pulse-dot inline-block" />
+          </h3>
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {workingAgents.length > 0 ? (
+              workingAgents.map((agent) => (
+                <div key={agent.id} className="flex items-center gap-2 text-xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse flex-shrink-0" />
+                  <span className="text-orion-text truncate">{agent.name}</span>
+                  <span className="text-orion-muted truncate flex-1 text-right">
+                    {agent.current_task_title || 'Processing...'}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p className="text-orion-muted text-xs">No active agents. All {liveAgents.length} agents idle.</p>
+            )}
+          </div>
+        </motion.div>
+
         {/* Three.js particle background — fills the content area */}
         <div className="absolute inset-0 -m-6 overflow-hidden rounded-xl">
           <ParticleSystem shape={shape} />
@@ -65,7 +88,7 @@ export default function OrionPage() {
         <div className="relative z-10 flex flex-col items-center gap-6 px-4 text-center">
           {/* Title */}
           <motion.h1
-            initial={{ opacity: 0, y: 20 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="text-6xl font-black tracking-widest sm:text-7xl md:text-8xl"
@@ -82,7 +105,7 @@ export default function OrionPage() {
 
           {/* Status text */}
           <motion.p
-            initial={{ opacity: 0 }}
+            initial={false}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.5 }}
             className="text-orion-muted text-sm tracking-[0.2em] uppercase"
@@ -92,58 +115,7 @@ export default function OrionPage() {
               : 'All systems idle'}
           </motion.p>
 
-          {/* Shape indicator badge (read-only) */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4, duration: 0.4 }}
-            className="flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium tracking-wider uppercase"
-            style={{
-              background: 'rgba(255,255,255,0.05)',
-              backdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              color: shapeColors[shape],
-              textShadow: `0 0 8px ${shapeColors[shape]}44`,
-            }}
-          >
-            <span
-              className="inline-block h-2 w-2 rounded-full"
-              style={{
-                background: shapeColors[shape],
-                boxShadow: `0 0 6px ${shapeColors[shape]}`,
-              }}
-            />
-            {shapeLabels[shape]} Mode
-          </motion.div>
 
-          {/* Agent activity feed */}
-          <motion.div
-            ref={feedRef}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
-            className="glass-card p-4 w-full max-w-md mt-4"
-          >
-            <h3 className="text-orion-text text-xs font-semibold uppercase tracking-wider mb-3 flex items-center gap-2">
-              Agent Activity
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 pulse-dot inline-block" />
-            </h3>
-            <div className="space-y-2 max-h-40 overflow-y-auto">
-              {workingAgents.length > 0 ? (
-                workingAgents.map((agent) => (
-                  <div key={agent.id} className="flex items-center gap-2 text-xs">
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse flex-shrink-0" />
-                    <span className="text-orion-text truncate">{agent.name}</span>
-                    <span className="text-orion-muted truncate flex-1 text-right">
-                      {agent.current_task_title || 'Processing...'}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-orion-muted text-xs">No active agents. All {liveAgents.length} agents idle.</p>
-              )}
-            </div>
-          </motion.div>
         </div>
 
         {/* Hand gesture (bottom-left) */}

@@ -8,6 +8,7 @@ const executeRoute = require('./pm-agent/execute');
 const stackSelectRoute = require('./pm-agent/stack-select');
 const { authenticate } = require('./middleware/auth');
 const { callLLM, checkAnthropicHealth, checkOpenAIHealth } = require('./pm-agent/llm');
+const axios = require('axios');
 
 const app = express();
 app.use(cors());
@@ -91,6 +92,68 @@ app.get('/health/llm/providers', async (req, res) => {
     },
     timestamp: new Date().toISOString(),
   });
+});
+
+// ElevenLabs voices
+app.get('/tts/voices', async (req, res) => {
+  try {
+    const key = process.env.ELEVENLABS_API_KEY;
+    if (!key) return res.status(400).json({ success: false, message: 'ELEVENLABS_API_KEY missing' });
+
+    const r = await axios.get('https://api.elevenlabs.io/v1/voices', {
+      headers: { 'xi-api-key': key },
+      timeout: 20000,
+    });
+
+    res.json({ success: true, voices: r.data?.voices || [] });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err?.response?.data?.detail || err.message || 'Voice list failed' });
+  }
+});
+
+// ElevenLabs synthesize speech
+app.post('/tts/speak', async (req, res) => {
+  try {
+    const key = process.env.ELEVENLABS_API_KEY;
+    if (!key) return res.status(400).json({ success: false, message: 'ELEVENLABS_API_KEY missing' });
+
+    const text = (req.body?.text || '').toString().trim();
+    if (!text) return res.status(400).json({ success: false, message: 'text is required' });
+
+    const voiceId = (req.body?.voiceId || process.env.ELEVENLABS_VOICE_ID || '').toString();
+    if (!voiceId) return res.status(400).json({ success: false, message: 'voiceId missing (set ELEVENLABS_VOICE_ID or send voiceId)' });
+
+    const modelId = (req.body?.model_id || process.env.ELEVENLABS_MODEL_ID || 'eleven_multilingual_v2').toString();
+
+    const r = await axios.post(
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+      {
+        text,
+        model_id: modelId,
+        voice_settings: {
+          stability: 0.4,
+          similarity_boost: 0.85,
+          style: 0.35,
+          use_speaker_boost: true,
+        },
+      },
+      {
+        headers: {
+          'xi-api-key': key,
+          'Content-Type': 'application/json',
+          Accept: 'audio/mpeg',
+        },
+        responseType: 'arraybuffer',
+        timeout: 45000,
+      }
+    );
+
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Cache-Control', 'no-store');
+    return res.send(Buffer.from(r.data));
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err?.response?.data?.detail || err.message || 'TTS failed' });
+  }
 });
 
 // SSE Live Progress — broadcasts agent status updates + execution events

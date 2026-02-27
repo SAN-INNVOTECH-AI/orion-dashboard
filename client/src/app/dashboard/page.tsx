@@ -60,7 +60,7 @@ export default function DashboardPage() {
   const { projects, tasks, agents, fetchProjects, fetchTasks, fetchAgents } = useDashboardStore()
   const [analytics, setAnalytics] = useState<Analytics | null>(null)
   const [liveAgents, setLiveAgents] = useState(agents)
-  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+  const apiBase = '/api'
   const sectionsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {

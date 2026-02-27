@@ -1,0 +1,34 @@
+Implement a new particle style for Orion page inspired by:
+- https://blog.maximeheckel.com/posts/the-magical-world-of-particles-with-react-three-fiber-and-shaders/
+- curl.mp4 style (flowing, wispy, volumetric particle cloud)
+
+CRITICAL:
+1) Do NOT render a human face/bust anymore.
+2) Make default /orion particle mode a flowing abstract AI cloud (curl-noise vibe), centered and beautiful.
+3) Keep current architecture (plain Three.js + custom shaders), no migration to react-three-fiber.
+4) Keep performance stable with <=12000 particles.
+5) Keep full-screen background.
+6) Ensure no vertical-strip artifact.
+
+Files to update:
+- client/src/components/three/ParticleSystem.tsx
+- client/src/app/orion/page.tsx (default shape)
+- client/src/components/voice/VoiceInterface.tsx and gesture mapping if needed to avoid face mode
+
+Design direction:
+- Use buffer attributes for per-particle randomness/phase.
+- Vertex shader should create smooth flow/turbulence (multi-sine or pseudo curl-like drift) with stable center mass.
+- Fragment shader should render soft luminous particles (not hard square voxels now).
+- Color palette: cyan/white with subtle purple tint in glow.
+- Modes can be:
+  - swarm: diffuse cloud
+  - neural: dense flowing core
+  - circuit: structured stream/grid
+- Remove face mode entirely from type + generators + mappings.
+
+Also ensure UI overlay stays readable: particle alpha behind ORION text should be slightly reduced near center.
+
+After edits run:
+- cd client && npx next build
+
+Then output concise summary of exact changes.

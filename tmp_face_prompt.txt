@@ -1,0 +1,26 @@
+You are editing Orion Dashboard client code. Goal: make /orion particle look like a clear AI human face made of square particles (voxel style), similar to a front-facing cyan digital bust. Current implementation in client/src/components/three/ParticleSystem.tsx has generateFace but result is unclear. Rewrite only necessary parts for quality.
+
+Requirements:
+1) Keep existing architecture (single ParticleSystem, morph support).
+2) Face mode must render a recognizable frontal human face + neck/shoulders silhouette in particle cloud.
+3) Use square particles (already in fragment shader) and cyan palette.
+4) Remove artifacts like vertical strip/random banding.
+5) Keep performance acceptable (<= 12000 particles).
+6) Keep AI modes names: swarm, circuit, neural, face.
+7) Keep /orion default shape='face'.
+8) Ensure build passes.
+
+Implementation hint:
+- Build face using implicit regions in normalized head space with weighted sampling:
+  - oval head boundary
+  - eye sockets, nose bridge/tip, cheekbones, lips/chin
+  - neck cylinder and trapezius shoulders
+- Bias more particles toward facial features so it reads clearly from distance.
+- Keep z-depth subtle so face isn’t flat.
+- For face mode reduce rotation heavily or nearly lock frontal view.
+
+Also verify these files compile with TypeScript+Next lint:
+- client/src/components/three/ParticleSystem.tsx
+- client/src/app/orion/page.tsx (default should be face)
+
+When done, print concise summary of exact edits.

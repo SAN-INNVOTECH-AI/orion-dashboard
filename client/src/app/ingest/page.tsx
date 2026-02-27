@@ -108,7 +108,7 @@ export default function IngestPage() {
 
     api.post(`/pm-agent/execute/${projectId}?min_phase=${minPhase}&max_phase=${maxPhase}&llm_provider=${llmProvider}`).catch(() => {})
 
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+    const apiBase = '/api'
     const es = new EventSource(`${apiBase}/live-progress`)
 
     es.onmessage = (e) => {

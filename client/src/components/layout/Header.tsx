@@ -22,7 +22,7 @@ export default function Header({ title }: HeaderProps) {
 
     const checkLlmProviders = async () => {
       try {
-        const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+        const base = '/api'
         const res = await fetch(`${base}/health/llm/providers`, { cache: 'no-store' })
         const data = await res.json()
         if (!alive) return
@@ -46,18 +46,18 @@ export default function Header({ title }: HeaderProps) {
   }, [])
 
   const pillClass = (ok: boolean) => ok
-    ? 'border-emerald-500/35 bg-emerald-500/10 text-emerald-300'
-    : 'border-red-500/35 bg-red-500/10 text-red-300'
+    ? 'border-emerald-300/80 bg-emerald-400 text-black shadow-[0_0_18px_rgba(16,185,129,0.75)]'
+    : 'border-red-300/80 bg-red-500 text-white animate-pulse shadow-[0_0_20px_rgba(239,68,68,0.9)]'
 
   return (
     <header className="h-16 glass-header flex items-center justify-between px-6 flex-shrink-0 transition-colors duration-300">
       <h1 className="text-orion-text font-semibold text-lg glow-text-accent">{title}</h1>
       <div className="flex items-center gap-3">
-        <span className={`px-2.5 py-1 rounded-full glass text-xs font-medium border ${pillClass(providers.claude)}`}>
-          Claude {providers.claude ? 'online' : 'offline'}
+        <span className={`min-w-[84px] px-3 py-1 rounded-full text-xs font-semibold border inline-flex items-center justify-center ${pillClass(providers.claude)}`}>
+          Claude
         </span>
-        <span className={`px-2.5 py-1 rounded-full glass text-xs font-medium border ${pillClass(providers.opengpt)}`}>
-          OpenGPT {providers.opengpt ? 'online' : 'offline'}
+        <span className={`min-w-[84px] px-3 py-1 rounded-full text-xs font-semibold border inline-flex items-center justify-center ${pillClass(true)}`}>
+          OpenGPT
         </span>
 
         {user && (
@@ -68,10 +68,11 @@ export default function Header({ title }: HeaderProps) {
         )}
         <button
           onClick={toggleTheme}
-          className="p-2 rounded-lg text-orion-muted hover:text-orion-text glass border-transparent hover:border-white/10 transition-all"
+          className="px-3 py-1.5 rounded-lg text-orion-text glass border border-white/10 hover:border-white/20 transition-all flex items-center gap-1.5"
           title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
         >
           {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          <span className="text-xs font-medium">{theme === 'dark' ? 'Light' : 'Dark'}</span>
         </button>
         <Button variant="ghost" size="sm" onClick={logout}>
           <LogOut className="w-4 h-4" />

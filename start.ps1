@@ -2,7 +2,8 @@
 
 $root = $PSScriptRoot
 $env:PORT = "3001"
-$env:NEXT_PUBLIC_API_URL = "http://localhost:3001"
+
+$env:ORION_API_TARGET = "http://127.0.0.1:3001"
 
 # Start Backend
 Start-Process "cmd.exe" `
@@ -16,7 +17,7 @@ Start-Sleep 3
 
 # Start Frontend (Production Silent)
 Start-Process "C:\Program Files\nodejs\npm.cmd" `
-  -ArgumentList "run dev -- -p 3000" `
+  -ArgumentList "run dev -- --experimental-https -p 3000 -H 0.0.0.0" `
   -WorkingDirectory "$root\client" `
   -WindowStyle Hidden `
   -RedirectStandardOutput "$env:TEMP\orion-client.log" `

@@ -36,9 +36,9 @@ function classifyGesture(landmarks: { x: number; y: number; z: number }[]): Gest
   const allDown = extended.every(v => !v) && !thumbUp
   const peaceSign = extended[0] && extended[1] && !extended[2] && !extended[3]
 
-  if (allUp) return 'galaxy'       // open palm → galaxy
-  if (allDown) return 'heart'      // fist → heart
-  if (peaceSign) return 'flower'   // peace → flower
+  if (allUp) return 'galaxy'        // open palm → galaxy mode
+  if (allDown) return 'circuit'    // fist → alert/intense state
+  if (peaceSign) return 'neural'   // peace → calm state
   return null
 }
 
@@ -47,6 +47,7 @@ export default function HandGesture({ onGesture }: HandGestureProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [enabled, setEnabled] = useState(false)
   const [currentGesture, setCurrentGesture] = useState<GestureResult>(null)
+  const [unsupportedReason, setUnsupportedReason] = useState('')
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handsRef = useRef<any>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -92,6 +93,16 @@ export default function HandGesture({ onGesture }: HandGestureProps) {
 
     async function init() {
       try {
+        const isLocalHost = ['localhost', '127.0.0.1'].includes(window.location.hostname)
+        const secureOk = window.isSecureContext || isLocalHost
+        const mediaOk = !!navigator.mediaDevices?.getUserMedia
+
+        if (!secureOk || !mediaOk) {
+          setUnsupportedReason('Camera gestures need HTTPS (or localhost) with media permissions.')
+          setEnabled(false)
+          return
+        }
+
         // Dynamic imports — these are heavy WASM modules
         const { Hands } = await import('@mediapipe/hands')
         const { Camera } = await import('@mediapipe/camera_utils')
@@ -100,6 +111,8 @@ export default function HandGesture({ onGesture }: HandGestureProps) {
 
         const video = videoRef.current
         if (!video) return
+
+        setUnsupportedReason('')
 
         const hands = new Hands({
           locateFile: (file: string) =>
@@ -140,9 +153,8 @@ export default function HandGesture({ onGesture }: HandGestureProps) {
   }, [enabled, handleResults])
 
   const gestureLabel: Record<string, string> = {
-    galaxy: 'Galaxy (open palm)',
-    heart: 'Heart (fist)',
-    flower: 'Flower (peace)',
+    circuit: 'Alert state (fist)',
+    neural: 'Calm state (open palm/peace)',
   }
 
   return (
@@ -185,7 +197,8 @@ export default function HandGesture({ onGesture }: HandGestureProps) {
       {/* Toggle button */}
       <button
         onClick={() => setEnabled(v => !v)}
-        className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all"
+        disabled={!!unsupportedReason}
+        className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all disabled:opacity-60 disabled:cursor-not-allowed"
         style={{
           background: enabled ? 'rgba(0,245,255,0.15)' : 'rgba(255,255,255,0.06)',
           backdropFilter: 'blur(12px)',
@@ -194,8 +207,12 @@ export default function HandGesture({ onGesture }: HandGestureProps) {
           color: enabled ? '#00f5ff' : '#94a3b8',
         }}
       >
-        {enabled ? '🖐 Gesture On' : '🖐 Gesture Off'}
+        {unsupportedReason ? '🖐 Gesture unavailable' : enabled ? '🖐 Gesture On' : '🖐 Gesture Off'}
       </button>
+
+      {unsupportedReason && (
+        <p className="max-w-[220px] text-[10px] text-amber-300 leading-snug">{unsupportedReason}</p>
+      )}
     </div>
   )
 }

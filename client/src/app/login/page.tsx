@@ -97,7 +97,7 @@ export default function LoginPage() {
             <OrionLogo size={56} />
           </div>
           <h1 className="text-[#00f5ff] font-bold text-2xl tracking-wide glow-text">ORION</h1>
-          <p className="text-orion-muted text-xs mt-1 tracking-widest uppercase">SAN Innvotech AI</p>
+          <p className="text-orion-muted text-xs mt-1 tracking-widest uppercase">SAN INNVOTECH</p>
         </motion.div>
 
         {/* Form */}

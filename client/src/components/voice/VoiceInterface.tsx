@@ -30,18 +30,28 @@ async function mockVoiceQuery(transcript: string): Promise<string> {
     return 'You have 3 active projects. The latest is "Orion Dashboard" with 12 tasks in progress.'
   }
   if (lower.includes('help')) {
-    return 'Try saying "show heart", "show galaxy", or "show flower" to change the particles. Or ask about agent status.'
+    return 'Ask about agent status, project progress, risks, or what Orion should do next.'
   }
   return `I heard: "${transcript}". Try asking about agent status or projects.`
 }
 
-// ── Shape command detection ──────────────────────────────
-function detectShapeCommand(text: string): ParticleShape | null {
-  const lower = text.toLowerCase()
-  if (lower.includes('heart')) return 'heart'
-  if (lower.includes('flower')) return 'flower'
-  if (lower.includes('galaxy')) return 'galaxy'
-  return null
+// ── Response-driven shape detection (no manual mode names) ──────────────
+function detectShapeFromOrionResponse(text: string): ParticleShape {
+  const lower = text.toLowerCase().trim()
+
+  // Lightweight intent signals
+  const urgent = /(error|failed|blocked|risk|critical|warning|down|stuck)/.test(lower)
+  const positive = /(healthy|online|ready|complete|stable|good|success)/.test(lower)
+  const active = /(working|running|processing|executing|in progress|active)/.test(lower)
+
+  if (urgent) return 'circuit'
+  if (active) return 'neural'
+  if (positive) return 'galaxy'
+
+  // Fallback: deterministic from response hash (AI-centric states)
+  let h = 0
+  for (let i = 0; i < lower.length; i++) h = (h * 31 + lower.charCodeAt(i)) >>> 0
+  return h % 2 === 0 ? 'neural' : 'circuit'
 }
 
 // ── Component ────────────────────────────────────────────
@@ -51,18 +61,51 @@ export default function VoiceInterface({ onShapeCommand }: VoiceInterfaceProps) 
   const [transcript, setTranscript] = useState('')
   const [response, setResponse] = useState('')
   const [supported, setSupported] = useState(true)
+  const [unsupportedReason, setUnsupportedReason] = useState('')
+  const [elevenVoiceId, setElevenVoiceId] = useState('')
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null)
   const fadeTimerRef = useRef<ReturnType<typeof setTimeout>>()
 
+  // Load ElevenLabs voices and pick an Indian female voice when possible
+  useEffect(() => {
+    let alive = true
+    const loadVoices = async () => {
+      try {
+        const r = await fetch('/api/tts/voices', { cache: 'no-store' })
+        if (!r.ok) return
+        const data = await r.json()
+        const voices = (data?.voices || []) as Array<{ voice_id: string; name?: string; labels?: Record<string, string> }>
+        if (!voices.length || !alive) return
+
+        const pick =
+          voices.find(v => /india|indian|hindi/i.test(`${v?.name || ''} ${Object.values(v?.labels || {}).join(' ')}`) && /female|woman|girl/i.test(`${Object.values(v?.labels || {}).join(' ')}`)) ||
+          voices.find(v => /india|indian|hindi/i.test(`${v?.name || ''} ${Object.values(v?.labels || {}).join(' ')}`)) ||
+          voices[0]
+
+        if (alive) setElevenVoiceId(pick.voice_id)
+      } catch {}
+    }
+    loadVoices()
+    return () => { alive = false }
+  }, [])
+
   // Check browser support
   useEffect(() => {
+    const isLocalHost = ['localhost', '127.0.0.1'].includes(window.location.hostname)
+    const secureOk = window.isSecureContext || isLocalHost
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    if (!SR) {
+    if (!secureOk || !SR) {
       setSupported(false)
+      setUnsupportedReason(
+        !secureOk
+          ? 'Voice needs HTTPS (or localhost) and mic permission.'
+          : 'Speech recognition is not available in this browser.'
+      )
       return
     }
+    setUnsupportedReason('')
 
     const recognition = new SR()
     recognition.continuous = false
@@ -103,24 +146,50 @@ export default function VoiceInterface({ onShapeCommand }: VoiceInterfaceProps) 
   }, [])
 
   const handleFinalTranscript = useCallback(async (text: string) => {
-    // Check for shape commands
-    const shape = detectShapeCommand(text)
-    if (shape) {
-      onShapeCommand(shape)
-    }
-
-    // Get response from mock backend
+    // Get response from Orion backend/mock
     const reply = await mockVoiceQuery(text)
     setResponse(reply)
 
-    // Text-to-speech
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(reply)
-      utterance.rate = 1.0
-      utterance.pitch = 1.0
-      utterance.onstart = () => setSpeaking(true)
-      utterance.onend = () => setSpeaking(false)
-      window.speechSynthesis.speak(utterance)
+    // Dynamic shape based on Orion response intent/state
+    const responseShape = detectShapeFromOrionResponse(reply)
+    onShapeCommand(responseShape)
+
+    // Text-to-speech: ElevenLabs first, browser fallback
+    setSpeaking(true)
+    try {
+      const ttsRes = await fetch('/api/tts/speak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: reply, voiceId: elevenVoiceId || undefined }),
+      })
+
+      if (ttsRes.ok) {
+        const blob = await ttsRes.blob()
+        const url = URL.createObjectURL(blob)
+        const audio = new Audio(url)
+        audio.onended = () => {
+          setSpeaking(false)
+          URL.revokeObjectURL(url)
+        }
+        audio.onerror = () => {
+          setSpeaking(false)
+          URL.revokeObjectURL(url)
+        }
+        await audio.play()
+      } else {
+        throw new Error('elevenlabs-failed')
+      }
+    } catch {
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(reply)
+        utterance.rate = 0.95
+        utterance.pitch = 1.02
+        utterance.onend = () => setSpeaking(false)
+        utterance.onerror = () => setSpeaking(false)
+        window.speechSynthesis.speak(utterance)
+      } else {
+        setSpeaking(false)
+      }
     }
 
     // Clear transcript after delay
@@ -129,7 +198,7 @@ export default function VoiceInterface({ onShapeCommand }: VoiceInterfaceProps) 
       setTranscript('')
       setResponse('')
     }, 8000)
-  }, [onShapeCommand])
+  }, [onShapeCommand, elevenVoiceId])
 
   const toggleListening = useCallback(() => {
     const rec = recognitionRef.current
@@ -147,7 +216,11 @@ export default function VoiceInterface({ onShapeCommand }: VoiceInterfaceProps) 
   }, [listening])
 
   if (!supported) {
-    return null // Graceful degradation
+    return (
+      <div className="fixed bottom-6 left-1/2 z-30 -translate-x-1/2 rounded-lg px-3 py-2 text-[11px] text-amber-300 glass border border-amber-400/25">
+        {unsupportedReason || 'Voice unavailable on this browser/context.'}
+      </div>
+    )
   }
 
   return (

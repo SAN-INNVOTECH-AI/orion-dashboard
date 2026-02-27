@@ -41,7 +41,7 @@ export default function Sidebar() {
         </svg>
         <div>
           <p className="text-[#00f5ff] font-bold text-base tracking-wide leading-none glow-text">ORION</p>
-          <p className="text-orion-muted text-xs mt-0.5">SAN Innvotech AI</p>
+          <p className="text-orion-muted text-xs mt-0.5">SAN INNVOTECH</p>
         </div>
       </div>
 
@@ -53,9 +53,9 @@ export default function Sidebar() {
           return (
             <motion.div
               key={href}
-              initial={{ opacity: 0, x: -16 }}
+              initial={false}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.05, duration: 0.3, ease: 'easeOut' }}
+              transition={{ delay: i * 0.03, duration: 0.25, ease: 'easeOut' }}
             >
               <Link
                 href={href}
@@ -86,7 +86,7 @@ export default function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-white/[0.06]">
-        <p className="text-orion-muted text-xs">&copy; 2026 SAN Innvotech. All Rights Reserved.</p>
+        <p className="text-orion-muted text-xs">&copy; 2026 SAN INNVOTECH. All Rights Reserved.</p>
       </div>
     </div>
   )

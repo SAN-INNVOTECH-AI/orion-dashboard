@@ -1,0 +1,28 @@
+Rework Orion particle renderer inspired by Maxime Heckel particle article techniques (attributes + shader animation), but keep existing app architecture (do NOT migrate to react-three-fiber).
+
+Target files:
+- client/src/components/three/ParticleSystem.tsx
+- client/src/app/orion/page.tsx (only if needed for defaults)
+
+Goals:
+1) The face should look clearly like an AI human bust (head+neck+shoulders), front-facing.
+2) Use attribute-driven variation (e.g., aRandom, aPhase, aScale, aRegion) for each particle.
+3) Update shaders:
+   - vertex shader: add per-particle drift/wobble using uTime + attributes (small, stable movement)
+   - point size should vary per particle and with depth
+   - keep composition stable/readable (no vertical strip)
+   - minimal or near-zero rotation in face mode
+   - fragment shader: square-ish glowing voxels (not circles), softer edges
+4) Keep mode names: swarm, circuit, neural, face.
+5) Keep particle count performant (max 12000).
+6) Keep full-screen background behavior.
+7) Keep TypeScript + build clean.
+
+Important implementation notes:
+- Use BufferGeometry custom attributes (Float32Array) and bind them as BufferAttributes.
+- In shaders, consume these attributes to avoid flat/static look.
+- For face mode, use weighted region sampling for features so face reads clearly from distance.
+- Preserve morphing between modes (GSAP endArray allowed).
+
+After edits, run `npx next build` in client and ensure success.
+Return concise summary of what changed.

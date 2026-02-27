@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import AppLayout from '@/components/layout/AppLayout'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
@@ -52,6 +52,17 @@ function timeAgo(dateStr: string) {
 
 export default function AgentsPage() {
   const [agents, setAgents] = useState<Agent[]>([])
+  const particles = useMemo(
+    () => Array.from({ length: 22 }, (_, i) => ({
+      id: i,
+      left: `${(i * 37) % 100}%`,
+      top: `${(i * 19) % 100}%`,
+      delay: `${(i % 9) * 0.35}s`,
+      duration: `${6 + (i % 7)}s`,
+      size: 2 + (i % 4),
+    })),
+    []
+  )
   const [loading, setLoading] = useState(true)
   const [viewAgent, setViewAgent] = useState<Agent | null>(null)
   const [agentTasks, setAgentTasks] = useState<AgentTask[]>([])
@@ -68,7 +79,7 @@ export default function AgentsPage() {
 
   useEffect(() => {
     loadAgents()
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+    const apiBase = '/api'
     const es = new EventSource(`${apiBase}/live-progress`)
     es.onmessage = (e) => {
       try {
@@ -102,8 +113,38 @@ export default function AgentsPage() {
 
   return (
     <AppLayout title="Agent Fleet">
-      <div className="mb-6">
-        <p className="text-orion-muted text-sm">{agents.length} Specialized AI Agents · SAN Innvotech</p>
+      <div className="relative overflow-hidden rounded-2xl mb-6 glass-card p-5">
+        <div className="absolute inset-0 pointer-events-none">
+          {particles.map((p) => (
+            <span
+              key={p.id}
+              className="absolute rounded-full bg-cyan-300/60 animate-float"
+              style={{
+                left: p.left,
+                top: p.top,
+                width: p.size,
+                height: p.size,
+                animationDelay: p.delay,
+                animationDuration: p.duration,
+                boxShadow: '0 0 10px rgba(34,211,238,0.6)',
+              }}
+            />
+          ))}
+        </div>
+        <div className="relative z-10 flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold text-orion-text glow-text-accent">Live Agent Command Center</h2>
+            <p className="text-orion-muted text-sm mt-1">{agents.length} Specialized AI Agents · SAN INNVOTECH</p>
+          </div>
+          <div className="hidden md:flex gap-2">
+            <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs border border-emerald-400/30">
+              {agents.filter(a => a.status === 'working').length} working
+            </span>
+            <span className="px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 text-xs border border-sky-400/30">
+              {agents.filter(a => a.status === 'idle').length} standby
+            </span>
+          </div>
+        </div>
       </div>
 
       {loading ? (
@@ -119,6 +160,7 @@ export default function AgentsPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                whileHover={{ y: -4, scale: 1.01 }}
                 className="will-change-transform"
               >
                 <Card
