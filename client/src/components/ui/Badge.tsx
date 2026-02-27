@@ -28,9 +28,9 @@ const agentStatusColors: Record<string, string> = {
 }
 
 const roleColors: Record<string, string> = {
-  admin: 'bg-purple-500/20 text-purple-200 border-purple-500/30',
-  project_manager: 'bg-blue-500/20 text-blue-200 border-blue-500/30',
-  viewer: 'bg-gray-500/20 text-gray-200 border-gray-500/30',
+  admin: 'bg-purple-500/15 text-orion-text border-purple-400/40',
+  project_manager: 'bg-blue-500/15 text-orion-text border-blue-400/40',
+  viewer: 'bg-gray-500/15 text-orion-text border-gray-400/40',
 }
 
 const taskStatusColors: Record<string, string> = {

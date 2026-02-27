@@ -7,7 +7,7 @@ const ingestRoute = require('./pm-agent/ingest');
 const executeRoute = require('./pm-agent/execute');
 const stackSelectRoute = require('./pm-agent/stack-select');
 const { authenticate } = require('./middleware/auth');
-const { callLLM } = require('./pm-agent/llm');
+const { callLLM, checkAnthropicHealth, checkOpenAIHealth } = require('./pm-agent/llm');
 
 const app = express();
 app.use(cors());
@@ -77,6 +77,18 @@ app.get('/health/llm', async (req, res) => {
     provider: result.provider || 'unknown',
     model: result.model || 'unknown',
     ...result,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.get('/health/llm/providers', async (req, res) => {
+  const [anthropic, openai] = await Promise.all([checkAnthropicHealth(), checkOpenAIHealth()]);
+  res.json({
+    status: anthropic.ok || openai.ok ? 'ok' : 'error',
+    providers: {
+      claude: anthropic,
+      opengpt: openai,
+    },
     timestamp: new Date().toISOString(),
   });
 });

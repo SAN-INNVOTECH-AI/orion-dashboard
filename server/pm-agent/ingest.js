@@ -55,7 +55,7 @@ async function parseDocument(body) {
 module.exports = function ingestRoute(db) {
   return async function (req, res) {
     try {
-      const { name, priority = 'high', status = 'planning' } = req.body
+      const { name, priority = 'high', status = 'planning', llm_provider = 'auto' } = req.body
       if (!name) return res.status(400).json({ success: false, message: 'Project name is required' })
 
       const docText = await parseDocument(req.body)
@@ -73,6 +73,7 @@ module.exports = function ingestRoute(db) {
 
       // Ask LLM (as PM) to first select relevant agents, then create tasks only for those
       const llm = await callLLM({
+        preferred: llm_provider,
         anthropicModel: 'claude-opus-4-5',
         maxTokens: 4096,
         userPrompt: `You are a senior Project Manager analyzing a project document. Your first job is to decide WHICH agents from the roster are actually needed for this project — not all projects need every agent. Then create specific tasks only for the selected agents.

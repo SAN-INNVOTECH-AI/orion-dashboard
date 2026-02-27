@@ -9,6 +9,7 @@ import { FileText, Link, Upload, Play, CheckCircle, Loader2, ChevronRight } from
 import api from '@/lib/api'
 
 type InputMode = 'text' | 'url' | 'file'
+type LlmProvider = 'auto' | 'anthropic' | 'openai'
 
 const PHASES = [
   { phase: 1, name: 'Discovery',    icon: '🔍', agents: ['Business Analyst'] },
@@ -24,6 +25,7 @@ export default function IngestPage() {
   const router = useRouter()
   const [mode, setMode] = useState<InputMode>('text')
   const [projectName, setProjectName] = useState('')
+  const [llmProvider, setLlmProvider] = useState<LlmProvider>('auto')
   const [docText, setDocText] = useState('')
   const [googleUrl, setGoogleUrl] = useState('')
   const [file, setFile] = useState<File | null>(null)
@@ -62,7 +64,7 @@ export default function IngestPage() {
     setStep('ingesting')
 
     try {
-      const body: Record<string, string> = { name: projectName }
+      const body: Record<string, string> = { name: projectName, llm_provider: llmProvider }
 
       if (mode === 'text') {
         body.document_text = docText
@@ -86,7 +88,7 @@ export default function IngestPage() {
       })
 
       try {
-        const stackRes = await api.post('/pm-agent/stack-select', { project_id: createdProjectId })
+        const stackRes = await api.post('/pm-agent/stack-select', { project_id: createdProjectId, llm_provider: llmProvider })
         setStackDecision(stackRes.data.data || null)
       } catch {
         setStackDecision(null)
@@ -104,7 +106,7 @@ export default function IngestPage() {
     setStep('executing')
     setExecLog(prev => prev.length ? prev : [`Starting execution for "${projectName}"...`])
 
-    api.post(`/pm-agent/execute/${projectId}?min_phase=${minPhase}&max_phase=${maxPhase}`).catch(() => {})
+    api.post(`/pm-agent/execute/${projectId}?min_phase=${minPhase}&max_phase=${maxPhase}&llm_provider=${llmProvider}`).catch(() => {})
 
     const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
     const es = new EventSource(`${apiBase}/live-progress`)
@@ -191,6 +193,25 @@ export default function IngestPage() {
                   showValid
                   placeholder="e.g. Mobile App Redesign"
                 />
+
+                <div className="glass rounded-xl p-3 border border-white/10">
+                  <label className="text-orion-muted text-xs uppercase tracking-wide font-semibold block mb-2">LLM Engine</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {([
+                      { key: 'auto', label: 'Auto (Claude → OpenGPT)' },
+                      { key: 'anthropic', label: 'Claude only' },
+                      { key: 'openai', label: 'OpenGPT only' },
+                    ] as const).map(o => (
+                      <button
+                        key={o.key}
+                        onClick={() => setLlmProvider(o.key)}
+                        className={`px-3 py-2 rounded-lg text-xs border transition-all ${llmProvider === o.key ? 'bg-orion-accent/20 border-orion-accent text-orion-text' : 'glass border-white/10 text-orion-muted hover:text-orion-text'}`}
+                      >
+                        {o.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
                 {/* Doc input mode tabs */}
                 <div>

@@ -3,7 +3,7 @@ const { callLLM } = require('./llm')
 module.exports = function stackSelectRoute(db) {
   return async function (req, res) {
     try {
-      const { project_id } = req.body
+      const { project_id, llm_provider = 'auto' } = req.body
       if (!project_id) return res.status(400).json({ success: false, message: 'project_id is required' })
 
       const project = db.prepare('SELECT * FROM projects WHERE id = ?').get(project_id)
@@ -27,6 +27,7 @@ module.exports = function stackSelectRoute(db) {
         .join('\n')
 
       const llm = await callLLM({
+        preferred: llm_provider,
         anthropicModel: 'claude-haiku-4-5',
         maxTokens: 1400,
         userPrompt: `You are a principal architect choosing the right tech stack for delivery speed + scalability.

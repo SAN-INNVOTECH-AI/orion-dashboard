@@ -68,6 +68,7 @@ module.exports = function executeRoute(db, sseClients) {
     // Optional phase range (e.g. run only phases 1-2 for approval gate)
     const minPhase = parseInt(req.query.min_phase) || 1
     const maxPhase = parseInt(req.query.max_phase) || 99
+    const llmProvider = (req.query.llm_provider || 'auto').toString()
 
     // Get all tasks for this project, ordered by phase
     const tasks = db.prepare(
@@ -142,6 +143,7 @@ module.exports = function executeRoute(db, sseClients) {
             for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
               try {
                 const llm = await callLLM({
+                  preferred: llmProvider,
                   anthropicModel: 'claude-haiku-4-5',
                   maxTokens: 1024,
                   userPrompt: `${persona}
