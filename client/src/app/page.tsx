@@ -9,7 +9,7 @@ export default function Home() {
   useEffect(() => {
     const token = localStorage.getItem('orion_token')
     if (token) {
-      router.replace('/dashboard')
+      router.replace('/orion')
     } else {
       router.replace('/login')
     }

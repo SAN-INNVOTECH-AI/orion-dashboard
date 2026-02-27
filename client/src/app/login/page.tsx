@@ -34,7 +34,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     applyTheme(theme)
-    if (localStorage.getItem('orion_token')) router.push('/dashboard')
+    if (localStorage.getItem('orion_token')) router.push('/orion')
   }, [router, theme, applyTheme])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,7 +44,7 @@ export default function LoginPage() {
     setLoading(true)
     try {
       await login(email, password)
-      router.push('/dashboard')
+      router.push('/orion')
     } catch {
       setError('Invalid credentials. Please try again.')
     } finally {
