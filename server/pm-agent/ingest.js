@@ -6,8 +6,8 @@
  * Body: { name, document_text?, google_doc_url?, document_base64?, document_type? }
  */
 const { v4: uuidv4 } = require('uuid')
-const Anthropic = require('@anthropic-ai/sdk')
 const axios = require('axios')
+const { callLLM } = require('./llm')
 const mammoth = require('mammoth')
 
 // Agent type → phase mapping
@@ -62,23 +62,20 @@ module.exports = function ingestRoute(db) {
       if (!docText || docText.trim().length < 20)
         return res.status(400).json({ success: false, message: 'Document content too short or empty' })
 
-      const apiKey = process.env.ANTHROPIC_API_KEY
-      if (!apiKey) return res.status(500).json({ success: false, message: 'ANTHROPIC_API_KEY not set in server .env' })
-
-      const client = new Anthropic({ apiKey })
+      if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY && !process.env.OPENROUTER_API_KEY) {
+        return res.status(500).json({ success: false, message: 'No LLM key configured. Set ANTHROPIC_API_KEY or OPENAI_API_KEY.' })
+      }
 
       // Build the agent roster for the prompt
       const agentRoster = ALL_AGENT_TYPES
         .map(t => `- ${t.replace(/_/g, ' ')} (type: ${t})`)
         .join('\n')
 
-      // Ask Claude (as PM) to first select relevant agents, then create tasks only for those
-      const message = await client.messages.create({
-        model: 'claude-opus-4-5',
-        max_tokens: 4096,
-        messages: [{
-          role: 'user',
-          content: `You are a senior Project Manager analyzing a project document. Your first job is to decide WHICH agents from the roster are actually needed for this project — not all projects need every agent. Then create specific tasks only for the selected agents.
+      // Ask LLM (as PM) to first select relevant agents, then create tasks only for those
+      const llm = await callLLM({
+        anthropicModel: 'claude-opus-4-5',
+        maxTokens: 4096,
+        userPrompt: `You are a senior Project Manager analyzing a project document. Your first job is to decide WHICH agents from the roster are actually needed for this project — not all projects need every agent. Then create specific tasks only for the selected agents.
 
 PROJECT NAME: ${name}
 
@@ -109,12 +106,11 @@ Rules:
 - Priority must be one of: low, medium, high, urgent
 - agent_type in tasks must exactly match the type strings in the roster and be in selected_agents
 - DO NOT include agents that have no meaningful role in this project`,
-        }],
       })
 
       let parsed
       try {
-        const raw = message.content[0].text.trim()
+        const raw = (llm.text || '').trim()
         parsed = JSON.parse(raw)
       } catch {
         return res.status(500).json({ success: false, message: 'Claude returned invalid JSON. Try again.' })

@@ -7,7 +7,7 @@
  * After each task: status moves todo → in_progress → done, notes added.
  */
 const { v4: uuidv4 } = require('uuid')
-const Anthropic = require('@anthropic-ai/sdk')
+const { callLLM } = require('./llm')
 
 // Agent type → friendly description for prompting
 const AGENT_PERSONAS = {
@@ -34,14 +34,13 @@ module.exports = function executeRoute(db, sseClients) {
     const project = db.prepare('SELECT * FROM projects WHERE id = ?').get(project_id)
     if (!project) return res.status(404).json({ success: false, message: 'Project not found' })
 
-    const apiKey = process.env.ANTHROPIC_API_KEY
-    if (!apiKey) return res.status(500).json({ success: false, message: 'ANTHROPIC_API_KEY not set' })
+    if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY && !process.env.OPENROUTER_API_KEY) {
+      return res.status(500).json({ success: false, message: 'No LLM key configured. Set ANTHROPIC_API_KEY or OPENAI_API_KEY.' })
+    }
 
     // Ensure notes + phase columns exist
     try { db.exec('ALTER TABLE tasks ADD COLUMN notes TEXT') } catch {}
     try { db.exec('ALTER TABLE tasks ADD COLUMN phase INTEGER DEFAULT 1') } catch {}
-
-    const client = new Anthropic({ apiKey })
     const now = () => new Date().toISOString()
 
     // Helper: broadcast SSE to all dashboard clients
@@ -142,12 +141,10 @@ module.exports = function executeRoute(db, sseClients) {
             const MAX_RETRIES = 4
             for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
               try {
-                const msg = await client.messages.create({
-                  model: 'claude-haiku-4-5',
-                  max_tokens: 1024,
-                  messages: [{
-                    role: 'user',
-                    content: `${persona}
+                const llm = await callLLM({
+                  anthropicModel: 'claude-haiku-4-5',
+                  maxTokens: 1024,
+                  userPrompt: `${persona}
 
 PROJECT: ${project.name}
 PROJECT CONTEXT: ${project.description || 'No additional context'}
@@ -156,9 +153,8 @@ YOUR TASK: ${task.title}
 TASK DETAILS: ${task.description || 'Complete this task based on the project context.'}
 
 Execute this task. Be specific, practical, and reference the actual project. Provide a detailed work output in 200-400 words. Format with clear sections.`,
-                  }],
                 })
-                agentOutput = msg.content[0].text
+                agentOutput = llm.text
                 break  // success
               } catch (err) {
                 const isRateLimit = err?.status === 429 || err?.message?.includes('rate limit') || err?.message?.includes('overloaded')

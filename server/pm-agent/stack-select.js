@@ -1,4 +1,4 @@
-const Anthropic = require('@anthropic-ai/sdk')
+const { callLLM } = require('./llm')
 
 module.exports = function stackSelectRoute(db) {
   return async function (req, res) {
@@ -17,22 +17,19 @@ module.exports = function stackSelectRoute(db) {
         ORDER BY COALESCE(t.phase, 1), t.position
       `).all(project_id)
 
-      const apiKey = process.env.ANTHROPIC_API_KEY
-      if (!apiKey) return res.status(500).json({ success: false, message: 'ANTHROPIC_API_KEY not set in server .env' })
-
-      const client = new Anthropic({ apiKey })
+      if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY && !process.env.OPENROUTER_API_KEY) {
+        return res.status(500).json({ success: false, message: 'No LLM key configured. Set ANTHROPIC_API_KEY or OPENAI_API_KEY.' })
+      }
 
       const taskContext = tasks
         .slice(0, 40)
         .map((t, i) => `${i + 1}. [${t.agent_type || 'unknown'}] ${t.title}${t.description ? ` - ${t.description.slice(0, 120)}` : ''}`)
         .join('\n')
 
-      const msg = await client.messages.create({
-        model: 'claude-haiku-4-5',
-        max_tokens: 1400,
-        messages: [{
-          role: 'user',
-          content: `You are a principal architect choosing the right tech stack for delivery speed + scalability.
+      const llm = await callLLM({
+        anthropicModel: 'claude-haiku-4-5',
+        maxTokens: 1400,
+        userPrompt: `You are a principal architect choosing the right tech stack for delivery speed + scalability.
 
 Project: ${project.name}
 Description: ${project.description || 'N/A'}
@@ -55,12 +52,11 @@ Return ONLY valid JSON:
   "risks": ["...", "..."],
   "execution_blueprint": ["step 1", "step 2", "step 3"]
 }`,
-        }],
       })
 
       let parsed
       try {
-        parsed = JSON.parse(msg.content[0].text.trim())
+        parsed = JSON.parse((llm.text || '').trim())
       } catch {
         return res.status(500).json({ success: false, message: 'Stack strategist returned invalid JSON. Try again.' })
       }

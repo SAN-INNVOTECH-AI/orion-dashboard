@@ -7,7 +7,7 @@ const ingestRoute = require('./pm-agent/ingest');
 const executeRoute = require('./pm-agent/execute');
 const stackSelectRoute = require('./pm-agent/stack-select');
 const { authenticate } = require('./middleware/auth');
-const Anthropic = require('@anthropic-ai/sdk');
+const { callLLM } = require('./pm-agent/llm');
 
 const app = express();
 app.use(cors());
@@ -20,26 +20,27 @@ seedData(db);
 // Shared SSE client registry — used by execute route to broadcast
 const sseClients = new Set();
 
-async function checkAnthropicKey() {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return { ok: false, reason: 'missing_api_key', message: 'ANTHROPIC_API_KEY is not set' };
-  }
-
+async function checkLLMHealth() {
   try {
-    const client = new Anthropic({ apiKey });
-    await client.messages.create({
-      model: 'claude-haiku-4-5',
-      max_tokens: 8,
-      messages: [{ role: 'user', content: 'Reply with OK only.' }],
+    const llm = await callLLM({
+      anthropicModel: 'claude-haiku-4-5',
+      maxTokens: 8,
+      userPrompt: 'Reply with OK only.',
     });
-    return { ok: true, reason: 'validated', message: 'Anthropic key is valid' };
+
+    return {
+      ok: true,
+      reason: 'validated',
+      message: 'LLM reachable',
+      provider: llm.provider,
+      model: llm.model,
+    };
   } catch (err) {
     return {
       ok: false,
-      reason: err?.error?.type || 'llm_check_failed',
-      status: err?.status || 500,
-      message: err?.error?.message || err.message || 'Unknown Anthropic error',
+      reason: err?.response?.data?.error?.type || err?.error?.type || 'llm_check_failed',
+      status: err?.status || err?.response?.status || 500,
+      message: err?.response?.data?.error?.message || err?.error?.message || err.message || 'Unknown LLM error',
       request_id: err?.request_id || err?.error?.request_id || null,
     };
   }
@@ -67,14 +68,14 @@ app.post('/pm-agent/execute/:project_id', authenticate, executeRoute(db, sseClie
 // Health
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
-// LLM Health: validates Anthropic API key + connectivity
+// LLM Health: validates primary Claude and OpenAI codex fallback path
 app.get('/health/llm', async (req, res) => {
-  const result = await checkAnthropicKey();
+  const result = await checkLLMHealth();
   const status = result.ok ? 200 : (result.status || 500);
   res.status(status).json({
     status: result.ok ? 'ok' : 'error',
-    provider: 'anthropic',
-    model: 'claude-haiku-4-5',
+    provider: result.provider || 'unknown',
+    model: result.model || 'unknown',
     ...result,
     timestamp: new Date().toISOString(),
   });
@@ -120,10 +121,10 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, async () => {
   console.log(`Orion server running on port ${PORT}`);
 
-  const llm = await checkAnthropicKey();
+  const llm = await checkLLMHealth();
   if (!llm.ok) {
     console.warn(`[startup][llm] WARNING: ${llm.message}`);
   } else {
-    console.log('[startup][llm] Anthropic key validated.');
+    console.log(`[startup][llm] ${llm.provider} model ${llm.model} validated.`);
   }
 });
