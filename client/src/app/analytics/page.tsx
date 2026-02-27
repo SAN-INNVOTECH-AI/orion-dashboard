@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import AppLayout from '@/components/layout/AppLayout'
 import Card from '@/components/ui/Card'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
@@ -10,6 +10,7 @@ import {
   AreaChart, Area,
   ResponsiveContainer
 } from 'recharts'
+import { motion } from 'framer-motion'
 
 interface Analytics {
   projectsByStatus: { status: string; count: number }[]
@@ -37,9 +38,44 @@ const PRIORITY_COLORS: Record<string, string> = {
   low: '#6b7280', medium: '#3b82f6', high: '#f97316', urgent: '#ef4444',
 }
 
+const tooltipStyle = {
+  background: 'rgba(26,31,46,0.9)',
+  border: '1px solid rgba(255,255,255,0.1)',
+  borderRadius: 12,
+  color: 'var(--orion-text)',
+  backdropFilter: 'blur(12px)',
+}
+
+function AnimatedCounter({ value, prefix = '', suffix = '' }: { value: number; prefix?: string; suffix?: string }) {
+  const ref = useRef<HTMLSpanElement>(null)
+  const animated = useRef(false)
+
+  useEffect(() => {
+    if (!ref.current || animated.current) return
+    animated.current = true
+    const el = ref.current
+    import('animejs').then(({ animate }) => {
+      const obj = { val: 0 }
+      animate(obj, {
+        val: value,
+        duration: 1200,
+        easing: 'easeOutExpo',
+        onUpdate: () => {
+          el.textContent = prefix + Math.round(obj.val).toString() + suffix
+        },
+      })
+    }).catch(() => {
+      el.textContent = prefix + value.toString() + suffix
+    })
+  }, [value, prefix, suffix])
+
+  return <span ref={ref}>{prefix}0{suffix}</span>
+}
+
 export default function AnalyticsPage() {
   const [analytics, setAnalytics] = useState<Analytics | null>(null)
   const [loading, setLoading] = useState(true)
+  const wrapRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     api.get('/analytics')
@@ -47,85 +83,134 @@ export default function AnalyticsPage() {
       .finally(() => setLoading(false))
   }, [])
 
+  // GSAP scroll reveals
+  useEffect(() => {
+    if (!wrapRef.current || loading) return
+    const cards = wrapRef.current.querySelectorAll('.gsap-reveal')
+    if (cards.length === 0) return
+
+    import('gsap').then(({ gsap }) => {
+      cards.forEach((card, i) => {
+        gsap.fromTo(card,
+          { opacity: 0, y: 30 },
+          { opacity: 1, y: 0, duration: 0.5, delay: i * 0.1, ease: 'power2.out' }
+        )
+      })
+    }).catch(() => {})
+  }, [loading, analytics])
+
   if (loading) return <AppLayout title="Analytics"><div className="flex justify-center py-12"><LoadingSpinner /></div></AppLayout>
 
   return (
     <AppLayout title="Analytics">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Summary counters */}
+      {analytics?.summary && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          {[
+            { label: 'Total Projects', value: analytics.summary.totalProjects || 0, color: 'text-blue-400' },
+            { label: 'Total Tasks', value: analytics.summary.totalTasks || 0, color: 'text-yellow-400' },
+            { label: 'Total AI Cost', value: analytics.summary.totalCost || 0, color: 'text-green-400', prefix: '$' },
+          ].map(({ label, value, color, prefix }, i) => (
+            <motion.div
+              key={label}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.08, duration: 0.4 }}
+            >
+              <Card hoverable>
+                <p className="text-orion-muted text-sm">{label}</p>
+                <p className={`font-bold text-2xl mt-1 ${color}`}>
+                  <AnimatedCounter value={typeof value === 'number' ? Math.round(value) : 0} prefix={prefix || ''} />
+                </p>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      <div ref={wrapRef} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Projects by Status */}
-        <Card>
-          <h2 className="text-orion-text font-semibold mb-4">Projects by Status</h2>
-          {analytics?.projectsByStatus?.length ? (
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={analytics.projectsByStatus.map(e => ({ ...e, label: STATUS_LABELS[e.status] || e.status }))}
-                  dataKey="count" nameKey="label" cx="50%" cy="50%" outerRadius={80}
-                  label={({ label }) => label}
-                >
-                  {analytics.projectsByStatus.map((entry, i) => (
-                    <Cell key={i} fill={STATUS_COLORS[entry.status] || '#6366f1'} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value, name) => [value, name]}
-                  contentStyle={{ background: 'var(--orion-tooltip-bg)', border: '1px solid var(--orion-tooltip-border)', borderRadius: 8, color: 'var(--orion-text)' }}
-                />
-                <Legend formatter={(value) => STATUS_LABELS[value] || value} />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : <p className="text-orion-muted text-sm">No data</p>}
-        </Card>
+        <div className="gsap-reveal">
+          <Card>
+            <h2 className="text-orion-text font-semibold mb-4">Projects by Status</h2>
+            {analytics?.projectsByStatus?.length ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={analytics.projectsByStatus.map(e => ({ ...e, label: STATUS_LABELS[e.status] || e.status }))}
+                    dataKey="count" nameKey="label" cx="50%" cy="50%" outerRadius={80}
+                    label={({ name }) => name}
+                  >
+                    {analytics.projectsByStatus.map((entry, i) => (
+                      <Cell key={i} fill={STATUS_COLORS[entry.status] || '#6366f1'} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value, name) => [value, name]}
+                    contentStyle={tooltipStyle}
+                  />
+                  <Legend formatter={(value) => STATUS_LABELS[value] || value} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : <p className="text-orion-muted text-sm">No data</p>}
+          </Card>
+        </div>
 
         {/* Tasks by Priority */}
-        <Card>
-          <h2 className="text-orion-text font-semibold mb-4">Tasks by Priority</h2>
-          {analytics?.tasksByPriority?.length ? (
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={analytics.tasksByPriority.map(e => ({ ...e, label: PRIORITY_LABELS[e.priority] || e.priority }))}>
-                <XAxis dataKey="label" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                <Tooltip contentStyle={{ background: 'var(--orion-tooltip-bg)', border: '1px solid var(--orion-tooltip-border)', borderRadius: 8, color: 'var(--orion-text)' }} />
-                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                  {analytics.tasksByPriority.map((entry, i) => (
-                    <Cell key={i} fill={PRIORITY_COLORS[entry.priority] || '#6366f1'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          ) : <p className="text-orion-muted text-sm">No data</p>}
-        </Card>
+        <div className="gsap-reveal">
+          <Card>
+            <h2 className="text-orion-text font-semibold mb-4">Tasks by Priority</h2>
+            {analytics?.tasksByPriority?.length ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={analytics.tasksByPriority.map(e => ({ ...e, label: PRIORITY_LABELS[e.priority] || e.priority }))}>
+                  <XAxis dataKey="label" tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                  <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                  <Tooltip contentStyle={tooltipStyle} />
+                  <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                    {analytics.tasksByPriority.map((entry, i) => (
+                      <Cell key={i} fill={PRIORITY_COLORS[entry.priority] || '#6366f1'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : <p className="text-orion-muted text-sm">No data</p>}
+          </Card>
+        </div>
 
         {/* AI Cost Trend */}
-        <Card>
-          <h2 className="text-orion-text font-semibold mb-1">AI Cost Trend</h2>
-          <p className="text-orion-muted text-xs mb-4">Total: ${analytics?.summary?.totalCost?.toFixed(4) || '0.0000'}</p>
-          {analytics?.aiCostTrend?.length ? (
-            <ResponsiveContainer width="100%" height={250}>
-              <AreaChart data={analytics.aiCostTrend}>
-                <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 10 }} />
-                <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                <Tooltip contentStyle={{ background: 'var(--orion-tooltip-bg)', border: '1px solid var(--orion-tooltip-border)', borderRadius: 8, color: 'var(--orion-text)' }} />
-                <Area type="monotone" dataKey="cost" stroke="#6366f1" fill="#6366f1" fillOpacity={0.2} />
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : <p className="text-orion-muted text-sm">No AI usage data yet</p>}
-        </Card>
+        <div className="gsap-reveal">
+          <Card>
+            <h2 className="text-orion-text font-semibold mb-1">AI Cost Trend</h2>
+            <p className="text-orion-muted text-xs mb-4">Total: ${analytics?.summary?.totalCost?.toFixed(4) || '0.0000'}</p>
+            {analytics?.aiCostTrend?.length ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <AreaChart data={analytics.aiCostTrend}>
+                  <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                  <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                  <Tooltip contentStyle={tooltipStyle} />
+                  <Area type="monotone" dataKey="cost" stroke="#6366f1" fill="#6366f1" fillOpacity={0.2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : <p className="text-orion-muted text-sm">No AI usage data yet</p>}
+          </Card>
+        </div>
 
         {/* Agent Utilization */}
-        <Card>
-          <h2 className="text-orion-text font-semibold mb-4">Agent Utilization (Tasks Assigned)</h2>
-          {analytics?.agentUtilization?.filter(a => a.assigned_tasks_count > 0).length ? (
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={analytics.agentUtilization.slice(0, 10)} layout="vertical">
-                <XAxis type="number" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                <YAxis type="category" dataKey="name" tick={{ fill: '#94a3b8', fontSize: 10 }} width={130} />
-                <Tooltip contentStyle={{ background: 'var(--orion-tooltip-bg)', border: '1px solid var(--orion-tooltip-border)', borderRadius: 8, color: 'var(--orion-text)' }} />
-                <Bar dataKey="assigned_tasks_count" fill="#6366f1" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : <p className="text-orion-muted text-sm">No assignment data yet</p>}
-        </Card>
+        <div className="gsap-reveal">
+          <Card>
+            <h2 className="text-orion-text font-semibold mb-4">Agent Utilization (Tasks Assigned)</h2>
+            {analytics?.agentUtilization?.filter(a => a.assigned_tasks_count > 0).length ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={analytics.agentUtilization.slice(0, 10)} layout="vertical">
+                  <XAxis type="number" tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                  <YAxis type="category" dataKey="name" tick={{ fill: '#94a3b8', fontSize: 10 }} width={130} />
+                  <Tooltip contentStyle={tooltipStyle} />
+                  <Bar dataKey="assigned_tasks_count" fill="#6366f1" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : <p className="text-orion-muted text-sm">No assignment data yet</p>}
+          </Card>
+        </div>
       </div>
     </AppLayout>
   )

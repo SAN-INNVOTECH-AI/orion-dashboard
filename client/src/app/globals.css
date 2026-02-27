@@ -80,3 +80,105 @@ body {
   50%       { opacity: 0.5; transform: scale(0.8); }
 }
 .pulse-dot { animation: pulseDot 2s ease-in-out infinite; }
+
+/* ── Glassmorphism Design System ─────────── */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-strong {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* Light mode glass adjustments */
+.light .glass,
+.light .glass-card {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+.light .glass-strong {
+  background: rgba(255, 255, 255, 0.75);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* ── Glow utilities ──────────────────────── */
+.glow-accent {
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.15), 0 0 60px rgba(99, 102, 241, 0.05);
+}
+.glow-accent-strong {
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.3), 0 0 60px rgba(99, 102, 241, 0.1);
+}
+.glow-green {
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.3), 0 0 40px rgba(16, 185, 129, 0.1);
+}
+.glow-blue {
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.3), 0 0 40px rgba(59, 130, 246, 0.1);
+}
+.glow-red {
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.3), 0 0 40px rgba(239, 68, 68, 0.1);
+}
+.glow-yellow {
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.3), 0 0 40px rgba(245, 158, 11, 0.1);
+}
+
+/* ── Animated gradient background ────────── */
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animated-gradient-bg {
+  background: linear-gradient(
+    135deg,
+    var(--orion-darker) 0%,
+    #0d1220 25%,
+    #0f0e1a 50%,
+    #0d1220 75%,
+    var(--orion-darker) 100%
+  );
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+}
+.light .animated-gradient-bg {
+  background: linear-gradient(
+    135deg,
+    var(--orion-darker) 0%,
+    #eef2ff 25%,
+    #f0f0ff 50%,
+    #eef2ff 75%,
+    var(--orion-darker) 100%
+  );
+  background-size: 400% 400%;
+}
+
+/* ── Status glow pulses for agents ───────── */
+@keyframes pulseGreen {
+  0%, 100% { box-shadow: 0 0 4px rgba(16, 185, 129, 0.4); }
+  50%      { box-shadow: 0 0 12px rgba(16, 185, 129, 0.7); }
+}
+@keyframes pulseBlue {
+  0%, 100% { box-shadow: 0 0 4px rgba(59, 130, 246, 0.4); }
+  50%      { box-shadow: 0 0 12px rgba(59, 130, 246, 0.7); }
+}
+@keyframes pulseRed {
+  0%, 100% { box-shadow: 0 0 4px rgba(239, 68, 68, 0.4); }
+  50%      { box-shadow: 0 0 12px rgba(239, 68, 68, 0.7); }
+}
+.pulse-glow-green  { animation: pulseGreen 2s ease-in-out infinite; }
+.pulse-glow-blue   { animation: pulseBlue 2s ease-in-out infinite; }
+.pulse-glow-red    { animation: pulseRed 2s ease-in-out infinite; }

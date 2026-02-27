@@ -62,7 +62,7 @@ export default function IngestPage() {
     setStep('ingesting')
 
     try {
-      let body: Record<string, string> = { name: projectName }
+      const body: Record<string, string> = { name: projectName }
 
       if (mode === 'text') {
         body.document_text = docText
@@ -153,22 +153,22 @@ export default function IngestPage() {
     <AppLayout title="Start New Project">
       <div className="max-w-3xl mx-auto">
 
-        {/* Phase pipeline overview */}
+        {/* Phase pipeline overview — glass chips */}
         <div className="flex items-center gap-1 mb-8 overflow-x-auto pb-2">
           {PHASES.map((p, i) => (
             <div key={p.phase} className="flex items-center gap-1 flex-shrink-0">
-              <div className={`flex flex-col items-center px-3 py-2 rounded-lg text-center transition-all ${
+              <div className={`flex flex-col items-center px-3 py-2 rounded-lg text-center transition-all backdrop-blur-sm ${
                 currentPhase === p.phase
-                  ? 'bg-orion-accent/20 border border-orion-accent'
+                  ? 'bg-orion-accent/20 border border-orion-accent glow-accent'
                   : currentPhase > p.phase
-                  ? 'bg-green-500/10 border border-green-500/30 opacity-70'
-                  : 'bg-orion-card border border-orion-border opacity-50'
+                  ? 'bg-green-500/10 border border-green-500/30 opacity-70 glow-green'
+                  : 'glass border border-white/5 opacity-50'
               }`}>
                 <span className="text-lg">{p.icon}</span>
                 <span className="text-orion-text text-xs font-medium mt-0.5">{p.name}</span>
                 <span className="text-orion-muted text-xs">{p.agents.length} agent{p.agents.length > 1 ? 's' : ''}</span>
               </div>
-              {i < PHASES.length - 1 && <ChevronRight className="w-3 h-3 text-orion-border flex-shrink-0" />}
+              {i < PHASES.length - 1 && <ChevronRight className="w-3 h-3 text-white/20 flex-shrink-0" />}
             </div>
           ))}
         </div>
@@ -177,7 +177,7 @@ export default function IngestPage() {
           {/* STEP 1: Input */}
           {step === 'input' && (
             <motion.div key="input" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}>
-              <div className="bg-orion-card border border-orion-border rounded-2xl p-6 space-y-5">
+              <div className="glass-card p-6 space-y-5">
                 <div>
                   <h2 className="text-orion-text font-semibold text-lg">Project Details</h2>
                   <p className="text-orion-muted text-sm mt-1">Give your project a name and paste the document. Claude will read it and assign tasks to all 16 agents.</p>
@@ -204,10 +204,10 @@ export default function IngestPage() {
                       <button
                         key={key}
                         onClick={() => { setMode(key); setDocError('') }}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm border transition-all ${
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm border transition-all backdrop-blur-sm ${
                           mode === key
-                            ? 'bg-orion-accent/15 border-orion-accent text-orion-accent'
-                            : 'bg-orion-darker border-orion-border text-orion-muted hover:text-orion-text'
+                            ? 'bg-orion-accent/15 border-orion-accent text-orion-accent glow-accent'
+                            : 'glass border-white/10 text-orion-muted hover:text-orion-text'
                         }`}
                       >
                         <Icon className="w-3.5 h-3.5" />
@@ -222,8 +222,8 @@ export default function IngestPage() {
                       onChange={(e) => { setDocText(e.target.value); setDocError('') }}
                       rows={10}
                       placeholder="Paste your project document, PRD, brief, or requirements here..."
-                      className={`w-full bg-orion-darker border rounded-xl px-4 py-3 text-orion-text placeholder-orion-muted/50 text-sm focus:outline-none resize-none transition-colors ${
-                        docError ? 'border-orion-danger' : 'border-orion-border focus:border-orion-accent'
+                      className={`w-full glass border rounded-xl px-4 py-3 text-orion-text placeholder-orion-muted/50 text-sm focus:outline-none resize-none transition-colors ${
+                        docError ? 'border-orion-danger' : 'border-white/10 focus:border-orion-accent'
                       }`}
                     />
                   )}
@@ -236,8 +236,8 @@ export default function IngestPage() {
                     />
                   )}
                   {mode === 'file' && (
-                    <div className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
-                      docError ? 'border-orion-danger' : 'border-orion-border hover:border-orion-accent/50'
+                    <div className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors backdrop-blur-sm ${
+                      docError ? 'border-orion-danger' : 'border-white/10 hover:border-orion-accent/50'
                     }`}>
                       <Upload className="w-8 h-8 text-orion-muted mx-auto mb-2" />
                       <p className="text-orion-muted text-sm mb-3">Drop a PDF or Word file here</p>
@@ -272,12 +272,12 @@ export default function IngestPage() {
             </motion.div>
           )}
 
-          {/* STEP 2: Ingested — confirm before running */}
+          {/* STEP 2: Ingested */}
           {step === 'ingested' && ingestResult && (
             <motion.div key="ingested" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}>
-              <div className="bg-orion-card border border-orion-border rounded-2xl p-6 space-y-6">
+              <div className="glass-card p-6 space-y-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center backdrop-blur-sm">
                     <CheckCircle className="w-6 h-6 text-green-400" />
                   </div>
                   <div>
@@ -287,22 +287,22 @@ export default function IngestPage() {
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="bg-orion-darker rounded-xl p-4 text-center">
+                  <div className="glass rounded-xl p-4 text-center">
                     <p className="text-orion-text font-bold text-2xl">{ingestResult.tasks_created}</p>
                     <p className="text-orion-muted text-xs mt-1">Tasks Created</p>
                   </div>
-                  <div className="bg-orion-darker rounded-xl p-4 text-center">
+                  <div className="glass rounded-xl p-4 text-center">
                     <p className="text-orion-text font-bold text-2xl">{ingestResult.phases}</p>
                     <p className="text-orion-muted text-xs mt-1">Phases</p>
                   </div>
-                  <div className="bg-orion-darker rounded-xl p-4 text-center">
+                  <div className="glass rounded-xl p-4 text-center">
                     <p className="text-orion-text font-bold text-2xl">{ingestResult.agents_selected.length}</p>
                     <p className="text-orion-muted text-xs mt-1">Agents Selected</p>
                   </div>
                 </div>
 
                 {/* PM agent selection summary */}
-                <div className="bg-orion-darker rounded-xl p-4 space-y-3">
+                <div className="glass rounded-xl p-4 space-y-3">
                   <p className="text-orion-accent text-xs font-semibold uppercase tracking-wide">PM Agent Selection</p>
                   {ingestResult.selection_reasoning && (
                     <p className="text-orion-muted text-xs italic">{ingestResult.selection_reasoning}</p>
@@ -311,7 +311,7 @@ export default function IngestPage() {
                     <p className="text-orion-text text-xs font-medium mb-1.5">Active agents ({ingestResult.agents_selected.length})</p>
                     <div className="flex flex-wrap gap-1.5">
                       {ingestResult.agents_selected.map(a => (
-                        <span key={a} className="px-2 py-0.5 bg-green-500/10 border border-green-500/30 text-green-400 text-xs rounded-full">
+                        <span key={a} className="px-2 py-0.5 bg-green-500/10 border border-green-500/30 text-green-400 text-xs rounded-full backdrop-blur-sm">
                           {a.replace(/_/g, ' ')}
                         </span>
                       ))}
@@ -322,7 +322,7 @@ export default function IngestPage() {
                       <p className="text-orion-muted text-xs font-medium mb-1.5">Skipped ({ingestResult.agents_skipped.length})</p>
                       <div className="flex flex-wrap gap-1.5">
                         {ingestResult.agents_skipped.map(a => (
-                          <span key={a} className="px-2 py-0.5 bg-orion-border/30 text-orion-muted/50 text-xs rounded-full line-through">
+                          <span key={a} className="px-2 py-0.5 bg-white/5 text-orion-muted/50 text-xs rounded-full line-through">
                             {a.replace(/_/g, ' ')}
                           </span>
                         ))}
@@ -332,12 +332,12 @@ export default function IngestPage() {
                 </div>
 
                 {stackDecision?.recommended_stack && (
-                  <div className="bg-orion-darker rounded-xl p-4 space-y-3">
+                  <div className="glass rounded-xl p-4 space-y-3">
                     <p className="text-orion-accent text-xs font-semibold uppercase tracking-wide">Tech Stack Strategist (Phase 0)</p>
                     {stackDecision.reasoning && <p className="text-orion-muted text-xs">{stackDecision.reasoning}</p>}
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       {Object.entries(stackDecision.recommended_stack).map(([k, v]) => (
-                        <div key={k} className="bg-orion-card border border-orion-border rounded-md px-2 py-1.5">
+                        <div key={k} className="glass rounded-md px-2 py-1.5">
                           <span className="text-orion-muted">{k}: </span>
                           <span className="text-orion-text">{v}</span>
                         </div>
@@ -362,14 +362,13 @@ export default function IngestPage() {
           {/* STEP 3: Executing */}
           {(step === 'executing' || step === 'awaiting_approval' || step === 'done') && (
             <motion.div key="executing" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-              <div className="bg-orion-card border border-orion-border rounded-2xl p-6 space-y-4">
+              <div className="glass-card p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-orion-text font-semibold text-lg">
                     {step === 'done' ? 'All agents complete!' : step === 'awaiting_approval' ? 'Awaiting your approval' : 'Agents are working...'}
                   </h2>
                   {step === 'executing' && <Loader2 className="w-5 h-5 text-orion-accent animate-spin" />}
-                  {step === 'done' && <CheckCircle className="w-5 h-5 text-green-400" />
-                  }
+                  {step === 'done' && <CheckCircle className="w-5 h-5 text-green-400" />}
                   {step === 'awaiting_approval' && <CheckCircle className="w-5 h-5 text-yellow-400" />}
                 </div>
 
@@ -377,15 +376,15 @@ export default function IngestPage() {
                 <div className="flex gap-1">
                   {PHASES.map(p => (
                     <div key={p.phase} className={`flex-1 h-1.5 rounded-full transition-all ${
-                      currentPhase > p.phase ? 'bg-green-400' :
-                      currentPhase === p.phase ? 'bg-orion-accent animate-pulse' :
-                      'bg-orion-border'
+                      currentPhase > p.phase ? 'bg-green-400 glow-green' :
+                      currentPhase === p.phase ? 'bg-orion-accent animate-pulse glow-accent' :
+                      'bg-white/10'
                     }`} />
                   ))}
                 </div>
 
                 {/* Live log */}
-                <div className="bg-orion-darker rounded-xl p-4 h-64 overflow-y-auto font-mono text-xs space-y-1">
+                <div className="glass rounded-xl p-4 h-64 overflow-y-auto font-mono text-xs space-y-1">
                   {execLog.map((line, i) => (
                     <motion.p
                       key={i}

@@ -1,7 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
 import AppLayout from '@/components/layout/AppLayout'
-import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
@@ -13,6 +12,7 @@ import api from '@/lib/api'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 import { Plus, FolderOpen } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
 
 interface Task {
   id: string; title: string; description: string; status: string; priority: string
@@ -43,7 +43,7 @@ export default function KanbanPage() {
   const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [editTask, setEditTask] = useState<Task | null>(null)
-  const [defaultStatus, setDefaultStatus] = useState('todo')
+  const [, setDefaultStatus] = useState('todo')
   const [form, setForm] = useState({ title: '', description: '', priority: 'medium', assigned_agent: '', status: 'todo' })
   const [saving, setSaving] = useState(false)
   const [titleError, setTitleError] = useState('')
@@ -119,8 +119,12 @@ export default function KanbanPage() {
     <AppLayout title="Kanban Board">
       {/* No projects empty state */}
       {projectsLoaded && projects.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-24 text-center">
-          <div className="w-16 h-16 rounded-full bg-orion-accent/10 flex items-center justify-center mb-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col items-center justify-center py-24 text-center"
+        >
+          <div className="w-16 h-16 rounded-full bg-orion-accent/10 flex items-center justify-center mb-4 backdrop-blur-sm">
             <FolderOpen className="w-8 h-8 text-orion-accent" />
           </div>
           <h2 className="text-orion-text font-semibold text-xl mb-2">No projects yet</h2>
@@ -134,17 +138,17 @@ export default function KanbanPage() {
             <Plus className="w-4 h-4" />
             Create First Project
           </button>
-        </div>
+        </motion.div>
       )}
 
-      {/* Project selector + board — only when projects exist */}
+      {/* Project selector + board */}
       {projects.length > 0 && (
       <>
       <div className="flex items-center gap-4 mb-6">
         <select
           value={selectedProject}
           onChange={(e) => setSelectedProject(e.target.value)}
-          className="bg-orion-card border border-orion-border rounded-lg px-3 py-2 text-orion-text focus:outline-none focus:border-orion-accent"
+          className="glass border border-white/10 rounded-lg px-3 py-2 text-orion-text focus:outline-none focus:border-orion-accent"
         >
           {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
@@ -153,14 +157,20 @@ export default function KanbanPage() {
 
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="flex gap-4 overflow-x-auto pb-4">
-          {columns.map((col) => {
+          {columns.map((col, colIdx) => {
             const colTasks = tasks.filter((t) => t.status === col.id)
             return (
-              <div key={col.id} className="flex-shrink-0 w-72">
+              <motion.div
+                key={col.id}
+                className="flex-shrink-0 w-72"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: colIdx * 0.08, duration: 0.4 }}
+              >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <h3 className="text-orion-text font-semibold text-sm">{col.label}</h3>
-                    <span className="bg-orion-border text-orion-muted text-xs rounded-full px-2">{colTasks.length}</span>
+                    <span className="bg-white/10 text-orion-muted text-xs rounded-full px-2 backdrop-blur-sm">{colTasks.length}</span>
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => openCreate(col.id)}>
                     <Plus className="w-3 h-3" />
@@ -171,7 +181,11 @@ export default function KanbanPage() {
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                      className={`min-h-48 rounded-xl p-2 transition-colors ${snapshot.isDraggingOver ? 'bg-orion-accent/5' : 'bg-orion-darker'}`}
+                      className={`min-h-48 rounded-xl p-2 transition-all duration-200 ${
+                        snapshot.isDraggingOver
+                          ? 'glass border border-orion-accent/30 glow-accent'
+                          : 'glass border border-white/5'
+                      }`}
                     >
                       {colTasks.map((task, index) => (
                         <Draggable key={task.id} draggableId={task.id} index={index}>
@@ -181,7 +195,9 @@ export default function KanbanPage() {
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                               onClick={() => openEdit(task)}
-                              className={`bg-orion-card border border-orion-border rounded-lg p-3 mb-2 cursor-pointer hover:border-orion-accent/50 transition-all ${snapshot.isDragging ? 'shadow-lg shadow-orion-accent/20 rotate-1' : ''}`}
+                              className={`glass-card p-3 mb-2 cursor-pointer hover:border-orion-accent/50 transition-all duration-200 ${
+                                snapshot.isDragging ? 'shadow-lg shadow-orion-accent/20 rotate-1 glow-accent-strong' : ''
+                              }`}
                             >
                               <p className="text-orion-text text-sm font-medium mb-2">{task.title}</p>
                               <div className="flex items-center justify-between">
@@ -201,7 +217,7 @@ export default function KanbanPage() {
                     </div>
                   )}
                 </Droppable>
-              </div>
+              </motion.div>
             )
           })}
         </div>
@@ -226,7 +242,7 @@ export default function KanbanPage() {
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               rows={2}
-              className="bg-orion-card border border-orion-border rounded-lg px-3 py-2 text-orion-text w-full focus:outline-none focus:border-orion-accent resize-none"
+              className="glass border border-white/10 rounded-lg px-3 py-2 text-orion-text w-full focus:outline-none focus:border-orion-accent resize-none"
             />
           </div>
           <Select label="Priority" value={form.priority} onChange={(v) => setForm({ ...form, priority: v })} options={priorityOptions} />
@@ -237,9 +253,8 @@ export default function KanbanPage() {
             options={agentOptions}
             placeholder="— No Agent —"
           />
-          {/* Agent output notes — shown when task was executed by an agent */}
           {editTask?.notes && editTask.notes !== 'Agent is working on this task...' && (
-            <div className="bg-orion-darker border border-orion-border rounded-xl p-4">
+            <div className="glass border border-white/10 rounded-xl p-4">
               <p className="text-orion-accent text-xs font-semibold uppercase tracking-wide mb-2">Agent Output</p>
               <p className="text-orion-text text-sm whitespace-pre-wrap leading-relaxed">{editTask.notes}</p>
             </div>

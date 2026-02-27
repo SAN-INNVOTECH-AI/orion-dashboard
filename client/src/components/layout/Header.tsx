@@ -40,11 +40,11 @@ export default function Header({ title }: HeaderProps) {
   }, [])
 
   return (
-    <header className="h-16 border-b border-orion-border bg-orion-darker/80 backdrop-blur-sm flex items-center justify-between px-6 flex-shrink-0 transition-colors duration-300">
+    <header className="h-16 border-b border-white/10 glass flex items-center justify-between px-6 flex-shrink-0 transition-colors duration-300">
       <h1 className="text-orion-text font-semibold text-lg">{title}</h1>
       <div className="flex items-center gap-3">
         {llmOk === false && (
-          <span className="px-2 py-1 rounded-md border border-red-500/40 bg-red-500/10 text-red-400 text-xs font-medium">
+          <span className="px-2 py-1 rounded-md border border-red-500/40 bg-red-500/10 text-red-400 text-xs font-medium backdrop-blur-sm">
             LLM disconnected
           </span>
         )}
@@ -56,7 +56,7 @@ export default function Header({ title }: HeaderProps) {
         )}
         <button
           onClick={toggleTheme}
-          className="p-2 rounded-lg text-orion-muted hover:text-orion-text hover:bg-orion-card border border-transparent hover:border-orion-border transition-all"
+          className="p-2 rounded-lg text-orion-muted hover:text-orion-text hover:bg-white/5 border border-transparent hover:border-white/10 transition-all"
           title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
         >
           {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}

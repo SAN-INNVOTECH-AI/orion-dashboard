@@ -5,6 +5,9 @@ import { useAuthStore } from '@/store/authStore'
 import { useThemeStore } from '@/store/themeStore'
 import Sidebar from './Sidebar'
 import Header from './Header'
+import dynamic from 'next/dynamic'
+
+const SmoothScroll = dynamic(() => import('@/components/scroll/SmoothScroll'), { ssr: false })
 
 interface AppLayoutProps {
   title: string
@@ -30,14 +33,16 @@ export default function AppLayout({ title, children }: AppLayoutProps) {
   }
 
   return (
-    <div className="flex h-screen bg-orion-dark overflow-hidden transition-colors duration-300">
+    <div className="flex h-screen animated-gradient-bg overflow-hidden transition-colors duration-300">
       <Sidebar />
       <div className="flex-1 ml-64 flex flex-col overflow-hidden">
         <Header title={title} />
-        <main className="flex-1 overflow-auto p-6 bg-orion-dark transition-colors duration-300">
-          <div className="page-enter">
-            {children}
-          </div>
+        <main className="flex-1 overflow-auto p-6 transition-colors duration-300">
+          <SmoothScroll>
+            <div className="page-enter">
+              {children}
+            </div>
+          </SmoothScroll>
         </main>
       </div>
     </div>

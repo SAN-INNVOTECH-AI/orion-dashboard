@@ -13,6 +13,7 @@ import {
   FlaskConical, Search, Scale, Rocket, BookOpen, Wrench, Video,
   BriefcaseBusiness, BarChart3, Settings
 } from 'lucide-react'
+import { motion } from 'framer-motion'
 
 interface Agent {
   id: string; name: string; type: string; description: string
@@ -29,6 +30,13 @@ const typeIcons: Record<string, React.ElementType> = {
   performance_optimizer: Zap, qa_engineer: FlaskConical, seo_marketing: Search,
   compliance_legal: Scale, devops_engineer: Rocket, training_docs: BookOpen,
   maintenance_support: Wrench, video_generation: Video, default: BarChart3,
+}
+
+const statusGlowClass: Record<string, string> = {
+  idle: '',
+  working: 'pulse-glow-blue',
+  completed: 'pulse-glow-green',
+  error: 'pulse-glow-red',
 }
 
 function timeAgo(dateStr: string) {
@@ -86,12 +94,10 @@ export default function AgentsPage() {
       setReport(data)
       setShowReport(true)
       loadAgents()
-    } catch (e) {
+    } catch {
       alert('PM Agent failed to run')
     } finally { setIsRunning(false) }
   }
-
-  const pmAgent = agents.find((a) => a.type === 'project_manager')
 
   return (
     <AppLayout title="Agent Fleet">
@@ -103,43 +109,49 @@ export default function AgentsPage() {
         <div className="flex justify-center py-12"><LoadingSpinner /></div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {agents.map((agent) => {
+          {agents.map((agent, i) => {
             const Icon = typeIcons[agent.type] || typeIcons.default
             const isPM = agent.type === 'project_manager'
             return (
-              <Card
+              <motion.div
                 key={agent.id}
-                className={isPM ? 'border-orion-accent shadow-lg shadow-orion-accent/10' : ''}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.04, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
               >
-                <div className="flex items-start gap-3 mb-3">
-                  <div className={`p-2 rounded-lg ${isPM ? 'bg-orion-accent/20' : 'bg-orion-darker'}`}>
-                    <Icon className={`w-5 h-5 ${isPM ? 'text-orion-accent' : 'text-orion-muted'}`} />
+                <Card
+                  className={`${isPM ? 'border-orion-accent/40 glow-accent' : ''} ${statusGlowClass[agent.status] || ''}`}
+                >
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className={`p-2 rounded-lg backdrop-blur-sm ${isPM ? 'bg-orion-accent/20' : 'bg-white/5'}`}>
+                      <Icon className={`w-5 h-5 ${isPM ? 'text-orion-accent' : 'text-orion-muted'}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-orion-text font-semibold text-sm leading-tight">{agent.name}</p>
+                      <p className="text-orion-muted text-xs mt-0.5 capitalize">{agent.type.replace(/_/g, ' ')}</p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-orion-text font-semibold text-sm leading-tight">{agent.name}</p>
-                    <p className="text-orion-muted text-xs mt-0.5 capitalize">{agent.type.replace(/_/g, ' ')}</p>
+
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <AgentStatusDot status={agent.status} />
+                    <Badge type="agent-status" value={agent.status} />
                   </div>
-                </div>
 
-                <div className="flex items-center gap-1.5 mb-2">
-                  <AgentStatusDot status={agent.status} />
-                  <Badge type="agent-status" value={agent.status} />
-                </div>
+                  <p className="text-orion-muted text-xs italic mb-1 min-h-4 truncate">
+                    {agent.current_task_title || 'Available'}
+                  </p>
+                  <p className="text-orion-muted text-xs mb-3">{timeAgo(agent.last_active)}</p>
 
-                <p className="text-orion-muted text-xs italic mb-1 min-h-4 truncate">
-                  {agent.current_task_title || 'Available'}
-                </p>
-                <p className="text-orion-muted text-xs mb-3">{timeAgo(agent.last_active)}</p>
-
-                <Button variant="ghost" size="sm" className="w-full" onClick={() => openAgentTasks(agent)}>
-                  View Tasks
-                </Button>
-                {isPM && (
-                  <Button variant="primary" size="sm" className="w-full mt-2" onClick={runPMAgent} loading={isRunning}>
-                    {isRunning ? 'Running...' : 'Run PM Agent'}
+                  <Button variant="ghost" size="sm" className="w-full" onClick={() => openAgentTasks(agent)}>
+                    View Tasks
                   </Button>
-                )}
-              </Card>
+                  {isPM && (
+                    <Button variant="primary" size="sm" className="w-full mt-2" onClick={runPMAgent} loading={isRunning}>
+                      {isRunning ? 'Running...' : 'Run PM Agent'}
+                    </Button>
+                  )}
+                </Card>
+              </motion.div>
             )
           })}
         </div>
@@ -152,7 +164,7 @@ export default function AgentsPage() {
         ) : (
           <div className="space-y-2">
             {agentTasks.map((t) => (
-              <div key={t.id} className="flex items-center justify-between p-3 bg-orion-darker rounded-lg">
+              <div key={t.id} className="flex items-center justify-between p-3 glass rounded-lg">
                 <div>
                   <p className="text-orion-text text-sm font-medium">{t.title}</p>
                   {t.project_name && <p className="text-orion-muted text-xs">{t.project_name}</p>}
@@ -172,15 +184,15 @@ export default function AgentsPage() {
         {report && (
           <div>
             <div className="grid grid-cols-3 gap-4 mb-6">
-              <div className="bg-orion-darker rounded-lg p-3 text-center">
+              <div className="glass rounded-lg p-3 text-center">
                 <p className="text-2xl font-bold text-orion-text">{report.analyzed}</p>
                 <p className="text-orion-muted text-xs">Projects Analyzed</p>
               </div>
-              <div className="bg-orion-darker rounded-lg p-3 text-center">
+              <div className="glass rounded-lg p-3 text-center">
                 <p className="text-2xl font-bold text-yellow-400">{report.issues_found}</p>
                 <p className="text-orion-muted text-xs">Issues Found</p>
               </div>
-              <div className="bg-orion-darker rounded-lg p-3 text-center">
+              <div className="glass rounded-lg p-3 text-center">
                 <p className="text-2xl font-bold text-green-400">{report.tasks_created}</p>
                 <p className="text-orion-muted text-xs">Tasks Created</p>
               </div>
@@ -190,9 +202,9 @@ export default function AgentsPage() {
                 <h4 className="text-orion-text font-semibold mb-3">Agent Assignments</h4>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {report.assignments.map((a, i) => (
-                    <div key={i} className="flex items-center gap-2 p-2 bg-orion-darker rounded-lg text-sm">
-                      <span className="text-orion-text flex-1 truncate">📋 {a.task}</span>
-                      <span className="text-orion-muted">→</span>
+                    <div key={i} className="flex items-center gap-2 p-2 glass rounded-lg text-sm">
+                      <span className="text-orion-text flex-1 truncate">{a.task}</span>
+                      <span className="text-orion-muted">&rarr;</span>
                       <span className="text-orion-accent text-xs">{a.agent}</span>
                     </div>
                   ))}
@@ -200,7 +212,7 @@ export default function AgentsPage() {
               </div>
             )}
             {report.issues_found === 0 && (
-              <p className="text-green-400 text-sm">✅ No issues found — all projects look healthy!</p>
+              <p className="text-green-400 text-sm mt-4">No issues found — all projects look healthy!</p>
             )}
           </div>
         )}

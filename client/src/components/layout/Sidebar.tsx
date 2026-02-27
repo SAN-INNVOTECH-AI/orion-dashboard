@@ -25,8 +25,8 @@ export default function Sidebar() {
   const workingCount = agents.filter((a) => a.status === 'working').length
 
   return (
-    <div className="fixed left-0 top-0 h-screen w-64 bg-orion-darker border-r border-orion-border flex flex-col z-40">
-      <div className="p-5 border-b border-orion-border flex items-center gap-3">
+    <div className="fixed left-0 top-0 h-screen w-64 glass-strong flex flex-col z-40 border-r border-white/10">
+      <div className="p-5 border-b border-white/10 flex items-center gap-3">
         <svg width="30" height="30" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
           <circle cx="28" cy="28" r="24" stroke="#6366f1" strokeWidth="1.5" opacity="0.35" />
           <circle cx="28" cy="28" r="14" stroke="#6366f1" strokeWidth="1.5" opacity="0.6" />
@@ -60,8 +60,8 @@ export default function Sidebar() {
                 className={clsx(
                   'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200',
                   isActive
-                    ? 'bg-orion-accent/10 text-orion-accent border-r-2 border-orion-accent'
-                    : 'text-orion-muted hover:text-orion-text hover:bg-orion-card hover:translate-x-0.5'
+                    ? 'bg-orion-accent/15 text-orion-accent border-r-2 border-orion-accent glow-accent'
+                    : 'text-orion-muted hover:text-orion-text hover:bg-white/5 hover:translate-x-0.5'
                 )}
               >
                 <Icon className="w-4 h-4 flex-shrink-0" />
@@ -81,8 +81,8 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-orion-border">
-        <p className="text-orion-muted text-xs">© 2026 SAN Innvotech. All Rights Reserved.</p>
+      <div className="p-4 border-t border-white/10">
+        <p className="text-orion-muted text-xs">&copy; 2026 SAN Innvotech. All Rights Reserved.</p>
       </div>
     </div>
   )

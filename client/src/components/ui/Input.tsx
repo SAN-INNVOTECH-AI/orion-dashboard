@@ -5,8 +5,8 @@ import { CheckCircle } from 'lucide-react'
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string
   error?: string
-  showValid?: boolean   // shows green check when field has value and no error
-  hint?: string         // grey helper text below
+  showValid?: boolean
+  hint?: string
 }
 
 export default function Input({ label, error, showValid, hint, className, onChange, ...props }: InputProps) {
@@ -18,7 +18,7 @@ export default function Input({ label, error, showValid, hint, className, onChan
     ? 'border-orion-danger focus:border-orion-danger'
     : isValid
     ? 'border-green-500 focus:border-green-500'
-    : 'border-orion-border focus:border-orion-accent'
+    : 'border-white/10 focus:border-orion-accent'
 
   return (
     <div className="flex flex-col gap-1">
@@ -30,8 +30,8 @@ export default function Input({ label, error, showValid, hint, className, onChan
 
       <div className="relative">
         <input
-          className={`bg-orion-card border ${borderClass} rounded-lg px-3 py-2.5 text-orion-text w-full
-            focus:outline-none transition-all duration-200 placeholder:text-orion-muted/50 text-sm
+          className={`glass border ${borderClass} rounded-lg px-3 py-2.5 text-orion-text w-full
+            focus:outline-none focus:shadow-[0_0_0_3px_rgba(99,102,241,0.15)] transition-all duration-200 placeholder:text-orion-muted/50 text-sm
             ${isValid ? 'pr-9' : ''} ${className || ''}`}
           onBlur={() => setTouched(true)}
           onChange={(e) => { setTouched(true); onChange?.(e) }}

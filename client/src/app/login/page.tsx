@@ -30,7 +30,7 @@ export default function LoginPage() {
   const [show, setShow]         = useState(false)
   const [error, setError]       = useState('')
   const [loading, setLoading]   = useState(false)
-  const { login, token }        = useAuthStore()
+  const { login }               = useAuthStore()
   const { theme, toggleTheme, applyTheme } = useThemeStore()
   const router = useRouter()
 
@@ -55,7 +55,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-orion-darker px-4 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center animated-gradient-bg px-4 relative overflow-hidden">
       {/* Animated background orbs */}
       <div className="absolute inset-0 pointer-events-none">
         <motion.div
@@ -75,7 +75,7 @@ export default function LoginPage() {
       {/* Theme toggle */}
       <button
         onClick={toggleTheme}
-        className="absolute top-6 right-6 p-2 rounded-lg text-orion-muted hover:text-orion-text hover:bg-orion-card border border-orion-border transition-all"
+        className="absolute top-6 right-6 p-2 rounded-lg text-orion-muted hover:text-orion-text glass border-white/10 transition-all"
       >
         {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
       </button>
@@ -85,7 +85,7 @@ export default function LoginPage() {
         initial={{ opacity: 0, y: 28 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="bg-orion-card border border-orion-border rounded-2xl p-8 w-full max-w-sm shadow-2xl relative z-10"
+        className="glass-strong rounded-2xl p-8 w-full max-w-sm shadow-2xl relative z-10"
       >
         {/* Logo */}
         <motion.div
@@ -115,7 +115,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Username"
-              className="w-full bg-orion-darker border border-orion-border rounded-xl px-4 py-3 text-orion-text placeholder-orion-muted focus:outline-none focus:border-orion-accent transition-colors text-sm"
+              className="w-full glass border border-white/10 rounded-xl px-4 py-3 text-orion-text placeholder-orion-muted focus:outline-none focus:border-orion-accent transition-colors text-sm"
               autoFocus
             />
           </div>
@@ -126,7 +126,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
-              className="w-full bg-orion-darker border border-orion-border rounded-xl pl-4 pr-10 py-3 text-orion-text placeholder-orion-muted focus:outline-none focus:border-orion-accent transition-colors text-sm"
+              className="w-full glass border border-white/10 rounded-xl pl-4 pr-10 py-3 text-orion-text placeholder-orion-muted focus:outline-none focus:border-orion-accent transition-colors text-sm"
             />
             <button
               type="button"
